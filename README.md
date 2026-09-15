@@ -16,7 +16,9 @@ docker compose up -d --build
 npm run dev
 ```
 
-Open `http://localhost:3000`. Use the role buttons on the login page to explore the seeded demo. The customer surface uses the Compose API gateway at port 8080 for table join, cart ownership, persistence, and WebSocket updates. `npm run dev:api` starts an explicitly volatile gateway-only prototype on port 8083, so it can run alongside Compose; its health endpoint is `http://localhost:8083/health`.
+Open `http://localhost:3000` for the landing page, `/app?table=SAGE-12` to enter a guest name, and `/restaurant` for the read-only SAGE-12 order board. The customer surface uses the Compose gateway at port 8080. `npm run dev:api` starts a volatile gateway-only prototype on port 8083 and does not support persisted checkout.
+
+Checkout currently simulates the entire table from one diner’s click. Independent diner payment, safe repeated checkout, restaurant completion actions and browser verification remain pending. Supabase client helpers and session refresh are installed, but login and backend authorization are not implemented. Put public Supabase settings from `.env.example` in `apps/web/.env.local`; see [deployment setup](docs/DEPLOYMENT.md).
 
 ## Repository map
 

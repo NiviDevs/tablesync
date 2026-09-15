@@ -8,9 +8,19 @@ The service containers are reachable only on the Compose network; public ports a
 
 ## Supabase migration
 
-Supabase is the production PostgreSQL and Auth provider, not a replacement for service ownership.
+### Current web setup
 
-1. Create a Supabase project and use its pooled PostgreSQL connection string as `DATABASE_URL` through a secret manager.
+The supplied project URL and publishable key are stored in ignored `apps/web/.env.local`, where Next.js loads them. `.env.example` contains placeholders. Restart the web dev server after changing these values. The SDKs are web-workspace dependencies.
+
+`apps/web/utils/supabase/client.ts` creates the browser client. For server code, import `createClient` from `@/utils/supabase/server` and pass `await cookies()` from `next/headers`. `apps/web/proxy.ts` invokes `utils/supabase/middleware.ts` and `getClaims()` to refresh cookies on requests excluding static assets. Without Supabase settings the local public demo still runs; calling either client helper requires valid settings.
+
+This is session-refresh plumbing only: no login page, callback, protected routes, gateway JWT verification, hosted database migration or authenticated refresh test has been added. The sample `todos` query is not part of TableSync. The existing dining pages are preserved. Follow the [official Supabase SSR guide](https://supabase.com/docs/guides/auth/server-side/creating-a-client) for the underlying pattern.
+
+### Remaining production work
+
+Supabase is the intended production PostgreSQL and Auth provider. Domain data currently remains in Compose PostgreSQL.
+
+1. The local web app has a supplied Supabase project URL/key. To migrate domain storage later, obtain the pooled PostgreSQL connection string and configure `DATABASE_URL` through a secret manager; the public web key is not a database password.
 2. Convert `infra/postgres/init.sql` into numbered, reviewed SQL migrations and apply them through the Supabase CLI/CI pipeline. Do not run the local Docker init mount in production.
 3. Enable Supabase Auth. The Auth service validates JWTs using Supabase JWKS and resolves application roles from `profiles`/`roles`; the browser never receives a service-role key.
 4. Restrict direct database access with roles/RLS. Services use scoped database credentials and access only their owned tables.
