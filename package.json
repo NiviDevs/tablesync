@@ -1,0 +1,15 @@
+{
+  "name": "tablesync",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@11.19.1",
+  "workspaces": ["apps/*", "services/*", "packages/*"],
+  "scripts": {
+    "dev": "npm run dev --workspace=@tablesync/web",
+    "dev:api": "npm run dev --workspace=@tablesync/api-gateway",
+    "build": "npm run build --workspace=@tablesync/web",
+    "lint": "npm run lint --workspace=@tablesync/web",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}

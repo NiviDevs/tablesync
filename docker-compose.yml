@@ -1,0 +1,79 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tablesync
+      POSTGRES_USER: tablesync
+      POSTGRES_PASSWORD: tablesync
+    ports: ["5432:5432"]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tablesync -d tablesync"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports: ["5672:5672", "15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  session:
+    build: ./services/session
+    environment:
+      DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  order:
+    build: ./services/order
+    environment:
+      DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      SESSION_SERVICE_URL: http://session:8081
+    depends_on:
+      postgres: { condition: service_healthy }
+      session: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8082/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  api-gateway:
+    build: ./services/api-gateway
+    environment:
+      TABLESYNC_RUNTIME: services
+      SESSION_SERVICE_URL: http://session:8081
+      ORDER_SERVICE_URL: http://order:8082
+    ports: ["8080:8080"]
+    depends_on:
+      session: { condition: service_healthy }
+      order: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  postgres-data:

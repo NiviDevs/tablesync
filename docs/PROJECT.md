@@ -1,0 +1,7 @@
+# Project
+
+TableSync lets diners independently add menu items to a shared restaurant-table order. A table is the collaboration context: a single guest has a normal order flow; collaboration appears automatically once another participant joins.
+
+The paying tenant is the restaurant. Customers are free. Review 1 models a platform fee and a payment ledger but performs only explicitly simulated payments.
+
+Review 1 scope is: role routing, table joining, live shared cart, item ownership, split checkout with a deterministic mock-provider Saga, consolidated restaurant orders, and a real local observability/scaling path.

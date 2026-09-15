@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { buildApp } from '../server.js';
+test('a joined participant can add an owned cart item', async (t) => { const app = buildApp(); t.after(() => app.close()); const joined = await app.inject({ method: 'POST', url: '/v1/table-sessions/join', payload: { tableCode: 'sage-12', participant: { id: 'maya', name: 'Maya' } } }); assert.equal(joined.statusCode, 200); const added = await app.inject({ method: 'POST', url: '/v1/table-sessions/SAGE-12/cart-items', payload: { participantId: 'maya', menuItemId: 'paneer' } }); assert.equal(added.statusCode, 200); assert.equal(added.json().items[0].ownerId, 'maya'); assert.equal(added.json().subtotal, 340); });
+test('cart updates reject guests that did not join', async (t) => { const app = buildApp(); t.after(() => app.close()); const response = await app.inject({ method: 'POST', url: '/v1/table-sessions/SAGE-12/cart-items', payload: { participantId: 'unknown', menuItemId: 'paneer' } }); assert.equal(response.statusCode, 403); });

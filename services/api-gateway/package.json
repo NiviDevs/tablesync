@@ -1,0 +1,1 @@
+{ "name":"@tablesync/api-gateway", "private":true, "type":"module", "scripts":{"dev":"node --watch server.js","start":"node server.js","test":"node --test test/*.test.js"}, "dependencies":{"@fastify/websocket":"^11.0.0","fastify":"^5.0.0"} }
