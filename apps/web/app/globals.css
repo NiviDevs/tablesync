@@ -8,3 +8,12 @@
 
 @media(max-width:720px){.site-shell{padding:22px 20px}.nav-actions{gap:12px}.nav-actions a:first-child{display:none}.landing-hero{display:block;padding:75px 0 55px}.hero-copy h1{font-size:51px;letter-spacing:-3.5px}.hero-scene{margin-top:50px;min-height:420px}.feature-section{display:block;padding:55px 0}.feature-list{margin-top:36px}.site-footer{align-items:flex-start;display:grid;gap:10px}.diner-hero{min-height:165px}.section-heading{align-items:start;gap:12px}.menu-note{padding-top:15px;text-align:right}.restaurant-page{padding:22px 17px 35px}.restaurant-intro{padding:72px 4px 54px}.restaurant-board{border-radius:20px;padding:20px}.restaurant-nav>div{gap:11px}.restaurant-status{display:none}.board-heading h2{font-size:23px}.dish-card{gap:9px;grid-template-columns:47px 1fr auto 33px}.dish-art{height:47px;width:47px}.dish-copy h3{font-size:13px}.dish-copy p{font-size:11px}.cart-bar{left:12px;right:12px}.cart-bar button{padding:11px}.arrival-page{padding:20px}.arrival-card{margin-top:8vh;padding:27px 22px}}
 .text-button{background:transparent;border:1px solid #75857b;border-radius:999px;color:#e0e4dd;font-size:11px;padding:7px 10px}.ready-pill{border:0;cursor:pointer}
+
+/* The landing page is a single viewport hero. */
+.site-shell{display:flex;flex-direction:column;height:100svh;overflow:hidden}
+.landing-hero{flex:1;min-height:0;padding:32px 0}
+
+@media(max-width:720px){
+  .site-shell{height:auto;min-height:100svh;overflow:visible}
+  .landing-hero{flex:none;padding:55px 0}
+}
