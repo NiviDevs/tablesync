@@ -1,111 +1,17 @@
 services:
   - type: web
-    name: tablesync-gateway
+    name: tablesync-api
     runtime: docker
     region: singapore
-    plan: starter
+    plan: free
     dockerfilePath: ./services/api-gateway/Dockerfile
     dockerContext: ./services/api-gateway
     healthCheckPath: /health
-    autoDeployTrigger: off
+    autoDeployTrigger: commit
     envVars:
       - key: PORT
         value: "10000"
       - key: TABLESYNC_RUNTIME
-        value: services
+        value: local-demo
       - key: WEB_ORIGIN
         value: https://tablesync-weld.vercel.app
-      - key: SESSION_SERVICE_URL
-        value: http://tablesync-session:10000
-      - key: ORDER_SERVICE_URL
-        value: http://tablesync-order:10000
-      - key: PAYMENT_SERVICE_URL
-        value: http://tablesync-payment:10000
-
-  - type: pserv
-    name: tablesync-session
-    runtime: docker
-    region: singapore
-    plan: starter
-    dockerfilePath: ./services/session/Dockerfile
-    dockerContext: ./services/session
-    autoDeployTrigger: off
-    envVars:
-      - fromGroup: tablesync-broker-credentials
-      - key: PORT
-        value: "10000"
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: tablesync-presence
-          property: connectionString
-
-  - type: pserv
-    name: tablesync-order
-    runtime: docker
-    region: singapore
-    plan: starter
-    dockerfilePath: ./services/order/Dockerfile
-    dockerContext: ./services/order
-    autoDeployTrigger: off
-    envVars:
-      - fromGroup: tablesync-broker-credentials
-      - key: PORT
-        value: "10000"
-      - key: DATABASE_URL
-        sync: false
-      - key: SESSION_SERVICE_URL
-        value: http://tablesync-session:10000
-
-  - type: pserv
-    name: tablesync-payment
-    runtime: docker
-    region: singapore
-    plan: starter
-    dockerfilePath: ./services/payment/Dockerfile
-    dockerContext: ./services/payment
-    autoDeployTrigger: off
-    envVars:
-      - fromGroup: tablesync-broker-credentials
-      - key: PORT
-        value: "10000"
-      - key: DATABASE_URL
-        sync: false
-
-  - type: pserv
-    name: tablesync-broker
-    runtime: docker
-    region: singapore
-    plan: starter
-    dockerfilePath: ./services/broker/Dockerfile
-    dockerContext: ./services/broker
-    autoDeployTrigger: off
-    envVars:
-      - fromGroup: tablesync-broker-credentials
-      - key: PORT
-        value: "5672"
-    disk:
-      name: rabbitmq-data
-      mountPath: /var/lib/rabbitmq
-      sizeGB: 1
-
-  - type: keyvalue
-    name: tablesync-presence
-    region: singapore
-    plan: free
-    maxmemoryPolicy: allkeys-lru
-    ipAllowList: []
-
-envVarGroups:
-  - name: tablesync-broker-credentials
-    envVars:
-      - key: RABBITMQ_DEFAULT_USER
-        value: tablesync
-      - key: RABBITMQ_DEFAULT_PASS
-        generateValue: true
-      - key: RABBITMQ_HOST
-        value: tablesync-broker
-      - key: RABBITMQ_PORT
-        value: "5672"
