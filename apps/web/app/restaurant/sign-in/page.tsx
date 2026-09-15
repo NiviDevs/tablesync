@@ -1,0 +1,5 @@
+"use client";
+import Link from 'next/link';
+import { useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
+export default function RestaurantSignIn() { const [email, setEmail] = useState(''); const [message, setMessage] = useState(''); const send = async () => { const { error } = await createClient().auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/restaurant` } }); setMessage(error ? error.message : 'Check your email for a secure restaurant sign-in link.'); }; return <main className="arrival-page"><Link className="brand" href="/">table<i>sync</i></Link><section className="arrival-card"><p className="kicker">Restaurant access</p><h1>Welcome back.</h1><p className="arrival-table">Juniper House · Staff only</p><label htmlFor="email">Work email</label><input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@restaurant.com" /><button className="primary-button full" disabled={!email} onClick={send}>Email me a sign-in link <span>→</span></button>{message && <p className="quiet-note">{message}</p>}</section></main>; }

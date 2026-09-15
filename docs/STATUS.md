@@ -13,6 +13,7 @@
 - Order-owned, idempotent consumer for committed payment Sagas that snapshots carts into consolidated orders and publishes `order.confirmed.v1` through a transactional outbox.
 - Product-flow refresh implemented: landing page, table-link/name entry, checkout sheet, and restaurant board polling projected `SAGE-12` orders. Mobile layout and full browser interactions remain unverified.
 - Supabase SDKs installed in the web workspace; browser/server helpers and Next.js 16 proxy refresh existing sessions using `getClaims()`. Local project settings live in ignored `apps/web/.env.local`.
+- A reviewable Supabase hosted-demo migration now seeds Juniper House, Table 12 (`SAGE-12`), and the four existing menu items. It models anonymous guest names, a one-time private table-host phone contact, and shared cart data with RLS. It has not been applied to the hosted project yet.
 
 ## In progress
 
@@ -20,10 +21,11 @@
 - Cart quantity/removal controls, checkout snapshot/locking, safe retries and prevention of repeated payment for purchased items.
 - Restaurant workflow actions: accept, prepare, and complete a consolidated order (not implemented yet).
 - Four-browser end-to-end coverage, visual checks, CI and hosted preview.
+- Apply `supabase/migrations/202609150001_hosted_demo.sql` to the connected Supabase project, then connect Vercel and set the public environment values before publishing the hosted-demo slice.
 
 ## Broken / not yet integrated
 
-- Supabase client/session-refresh plumbing is configured locally. Sign-in/out, callbacks, roles, tenant permissions and gateway JWT validation are not implemented. No authenticated session refresh against the hosted project has been verified.
+- Supabase client/session-refresh plumbing is configured locally. Guests remain intentionally login-free; staff email sign-in, callbacks, roles, tenant permissions and gateway JWT validation are not implemented. No authenticated session refresh against the hosted project has been verified.
 - Local standalone gateway development defaults to explicitly volatile demo state. Compose runs `TABLESYNC_RUNTIME=services`, where Session/Order persist to Postgres, Session uses Redis presence, and both publish RabbitMQ events.
 - Ops telemetry and autoscaling are not rendered as live metrics yet.
 - Checkout is explicitly simulated UPI behavior; committed Sagas create a consolidated order, while failed or compensated Sagas do not.
