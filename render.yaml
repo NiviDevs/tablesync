@@ -14,7 +14,7 @@ services:
       - key: TABLESYNC_RUNTIME
         value: services
       - key: WEB_ORIGIN
-        sync: false
+        value: https://tablesync-weld.vercel.app
       - key: SESSION_SERVICE_URL
         value: http://tablesync-session:10000
       - key: ORDER_SERVICE_URL
