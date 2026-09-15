@@ -50,7 +50,7 @@ export function buildApp() {
     if (!sessionId || !idempotencyKey || !Array.isArray(payments) || !payments.length || payments.some(payment => !payment?.participantId || !Number.isInteger(payment.amount) || payment.amount <= 0 || !validOutcomes.has(payment.outcome))) return reply.code(400).send({ error: 'sessionId, idempotencyKey, and non-empty deterministic payments are required' });
     try {
       const result = await persistSaga({ sessionId, idempotencyKey, payments });
-      for (const event of result.events) await publish(event.type, { ...event.data, sessionId });
+      for (const event of result.events) await publish(event.type, { ...event.data, sessionId, totalAmount: result.saga.totalAmount });
       return reply.code(result.replayed ? 200 : 201).send(result.saga);
     } catch (error) { request.log.error(error); return reply.code(500).send({ error: 'could not persist simulated payment saga' }); }
   });

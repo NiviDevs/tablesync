@@ -10,10 +10,11 @@
 - Running Docker Compose integration: PostgreSQL schema, Redis presence, RabbitMQ event exchange/audit queue, Session service, Order service, and gateway service composition.
 - Verified end-to-end through the Compose gateway: join participant, automatic collaborative session, persisted owned cart items, Redis presence, RabbitMQ events, and rejection of non-participant cart ownership.
 - Payment Compose service with persisted, idempotent deterministic Saga state, intent attempts, compensation outcome, platform-fee ledger representation, and RabbitMQ event publication.
+- Order-owned, idempotent consumer for committed payment Sagas that snapshots carts into consolidated orders and publishes `order.confirmed.v1` through a transactional outbox.
 
 ## In progress
 
-- Restaurant-order projection from committed payment Sagas.
+- Restaurant rendering of consolidated orders.
 - Durable table-session collaboration and cart persistence.
 
 ## Broken / not yet integrated
@@ -21,7 +22,7 @@
 - Authentication is a local role selector; Supabase Auth is not configured.
 - Local standalone gateway development defaults to explicitly volatile demo state. Compose runs `TABLESYNC_RUNTIME=services`, where Session/Order persist to Postgres, Session uses Redis presence, and both publish RabbitMQ events.
 - Ops telemetry and autoscaling are not rendered as live metrics yet.
-- Checkout uses an explicitly simulated UPI control; it does not create a restaurant order until the Order payment-event consumer is integrated.
+- Checkout is explicitly simulated UPI behavior; committed Sagas create a consolidated order, while failed or compensated Sagas do not.
 
 ## Known limitations
 

@@ -28,6 +28,11 @@ async function checkout(code, outcomes, idempotencyKey) {
   const payment = await requestJson(`${paymentUrl}/v1/payment-sagas`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sessionId: session.id, idempotencyKey, payments }) });
   return { session, payment };
 }
+async function ordersFor(code) {
+  if (runtime !== 'services') throw new Error('consolidated orders require the Compose Order service');
+  const session = await getSession(code);
+  return requestJson(`${orderUrl}/v1/orders?sessionId=${encodeURIComponent(session.id)}`);
+}
 
 export function buildApp() {
   const app = Fastify({ logger: true }); const rooms = new Map(); app.register(websocket);
@@ -40,6 +45,7 @@ export function buildApp() {
   app.post('/v1/table-sessions/join', async (request, reply) => { const { tableCode, participant } = request.body ?? {}; if (!tableCode || !participant?.id || !participant?.name) return reply.code(400).send({ error: 'tableCode and participant id/name are required' }); try { const session = await joinSession(tableCode, participant); await broadcast(tableCode, 'participant.joined.v1'); return session; } catch (error) { return reply.code(502).send({ error: 'session service unavailable', detail: error.message }); } });
   app.post('/v1/table-sessions/:code/cart-items', async (request, reply) => { const { participantId, menuItemId } = request.body ?? {}; try { const session = await addItem(request.params.code, participantId, menuItemId); await broadcast(request.params.code, 'cart.item_added.v1'); return session; } catch (error) { const status = error.message.includes('must join') || error.message.includes('403') ? 403 : error.message.includes('not found') || error.message.includes('404') ? 404 : 502; return reply.code(status).send({ error: error.message }); } });
   app.post('/v1/table-sessions/:code/checkout', async (request, reply) => { const { outcomes, idempotencyKey } = request.body ?? {}; if (!idempotencyKey) return reply.code(400).send({ error: 'idempotencyKey is required' }); try { return await checkout(request.params.code, outcomes, idempotencyKey); } catch (error) { return reply.code(error.message.includes('add an item') ? 400 : 502).send({ error: error.message }); } });
+  app.get('/v1/table-sessions/:code/orders', async (request, reply) => { try { return await ordersFor(request.params.code); } catch (error) { return reply.code(502).send({ error: error.message }); } });
   app.get('/v1/table-sessions/:code/live', { websocket: true }, async (socket, request) => { const code = request.params.code.toUpperCase(); if (!rooms.has(code)) rooms.set(code, new Set()); rooms.get(code).add(socket); try { socket.send(JSON.stringify({ type: 'session.snapshot.v1', session: await getSession(code) })); } catch { socket.send(JSON.stringify({ type: 'session.error.v1', error: 'Session service unavailable' })); } socket.on('close', () => rooms.get(code)?.delete(socket)); });
   return app;
 }
