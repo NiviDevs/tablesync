@@ -60,16 +60,31 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+  payment:
+    build: ./services/payment
+    environment:
+      DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8083/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   api-gateway:
     build: ./services/api-gateway
     environment:
       TABLESYNC_RUNTIME: services
       SESSION_SERVICE_URL: http://session:8081
       ORDER_SERVICE_URL: http://order:8082
+      PAYMENT_SERVICE_URL: http://payment:8083
     ports: ["8080:8080"]
     depends_on:
       session: { condition: service_healthy }
       order: { condition: service_healthy }
+      payment: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 5s

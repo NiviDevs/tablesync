@@ -2,7 +2,7 @@
 
 ## Local Review 1 environment
 
-`docker compose up -d --build` starts PostgreSQL, Redis, RabbitMQ, Session, and Order. The Postgres container applies `infra/postgres/init.sql` only when its data volume is first created. To intentionally recreate local data, use `docker compose down -v` and then start Compose again.
+`docker compose up -d --build` starts PostgreSQL, Redis, RabbitMQ, Session, Order, Payment, and the gateway. The Postgres container applies `infra/postgres/init.sql` only when its data volume is first created. Existing local volumes need each reviewed migration applied explicitly; for the current payment addition, run `docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U tablesync -d tablesync < infra/postgres/migrations/002-payment.sql`. To intentionally recreate local data, use `docker compose down -v` and then start Compose again.
 
 The service containers are reachable only on the Compose network; public ports are intentionally limited to development infrastructure. Before exposing an API gateway, configure CORS, JWT validation, rate limiting, TLS, and trusted proxy handling.
 

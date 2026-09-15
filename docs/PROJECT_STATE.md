@@ -2,10 +2,10 @@
 
 **Phase:** 0 — bootstrap
 
-**Working:** Docker Compose Session/Order persistence through PostgreSQL, Redis presence, RabbitMQ event publication/audit queue, gateway composition, local WebSocket fan-out, and deterministic mock-payment Saga domain tests.
+**Working:** Docker Compose Session/Order persistence through PostgreSQL, Redis presence, RabbitMQ event publication/audit queue, gateway composition, local WebSocket fan-out, and the persisted deterministic mock-payment Saga service/checkout route.
 
-**In progress:** checkout-to-payment API integration, restaurant order projection, Supabase Auth, and real Ops telemetry.
+**In progress:** committed-payment-to-consolidated-order projection, Supabase Auth, and real Ops telemetry.
 
 **Deferred:** Supabase identity configuration, external payment providers, managed-cloud deployment.
 
-**Next actions:** install dependencies; implement Fastify domain services and WebSocket gateway; wire durable Postgres/Redis/RabbitMQ; add Playwright critical-path tests.
+**Next actions:** consume committed payment events in Order, project a restaurant-visible consolidated order, then add critical-path browser coverage.

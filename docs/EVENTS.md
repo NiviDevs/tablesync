@@ -8,11 +8,11 @@ Local Compose binds the durable `tablesync.audit` queue to `tablesync.events` us
 |---|---|---|---|
 | `participant.joined.v1` | session | order, web gateway | sessionId, participant |
 | `cart.item_added.v1` | order | session, restaurant | sessionId, item, ownerId |
-| `payment.succeeded.v1` | payment | order | sagaId, participantId, intentId |
-| `payment.failed.v1` | payment | payment Saga | sagaId, participantId, reason |
-| `payment.compensated.v1` | payment | order, ops | sagaId, intentId |
+| `payment.succeeded.v1` | payment | order | sagaId, sessionId, participantId, intentId |
+| `payment.failed.v1` | payment | payment Saga | sagaId, sessionId, participantId, reason |
+| `payment.compensated.v1` | payment | order, ops | sagaId, sessionId, intentId |
 | `order.confirmed.v1` | order | restaurant, delivery | orderId, restaurantId |
-| `payment.compensation_started.v1` | payment | ops | sagaId, failedIntentId |
-| `payment.saga_committed.v1` | payment | order, restaurant | sagaId |
+| `payment.compensation_started.v1` | payment | ops | sagaId, sessionId, failedIntentId |
+| `payment.saga_committed.v1` | payment | order, restaurant | sagaId, sessionId |
 
-During the customer-slice integration, the API gateway broadcasts `participant.joined.v1`, `session.snapshot.v1`, and `cart.item_added.v1` over WebSockets. This is explicitly volatile local-demo transport; the session service will become the event producer when Redis/RabbitMQ persistence is integrated.
+The gateway broadcasts `participant.joined.v1`, `session.snapshot.v1`, and `cart.item_added.v1` snapshots over browser WebSockets after its request routes complete. The browser transport is transient; Session and Order remain the durable producers for their RabbitMQ domain events.
