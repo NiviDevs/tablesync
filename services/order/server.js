@@ -7,6 +7,7 @@ const database = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postg
 const sessionUrl = process.env.SESSION_SERVICE_URL ?? 'http://localhost:8081';
 const menu = [{ id: 'dumplings', name: 'Crispy corn dumplings', price: 260, emoji: '🥟' }, { id: 'paneer', name: 'Smoked butter paneer', price: 340, emoji: '🍛' }, { id: 'noodles', name: 'Chilli garlic noodles', price: 280, emoji: '🍜' }, { id: 'milk-cake', name: 'Saffron milk cake', price: 190, emoji: '🍮' }];
 let broker;
+const rabbitUrl = process.env.RABBITMQ_URL ?? `amqp://${encodeURIComponent(process.env.RABBITMQ_DEFAULT_USER ?? 'guest')}:${encodeURIComponent(process.env.RABBITMQ_DEFAULT_PASS ?? 'guest')}@${process.env.RABBITMQ_HOST ?? 'localhost'}:${process.env.RABBITMQ_PORT ?? '5672'}`;
 
 async function cartFor(sessionId) {
   const found = await database.query('SELECT id FROM carts WHERE session_id=$1', [sessionId]);
@@ -104,7 +105,7 @@ export function buildApp() {
 }
 async function start() {
   await database.query('SELECT 1');
-  const connection = await amqp.connect(process.env.RABBITMQ_URL ?? 'amqp://guest:guest@localhost:5672');
+  const connection = await amqp.connect(rabbitUrl);
   broker = await connection.createConfirmChannel();
   await broker.assertExchange('tablesync.events', 'topic', { durable: true });
   await broker.assertQueue('tablesync.audit', { durable: true }); await broker.bindQueue('tablesync.audit', 'tablesync.events', '#');

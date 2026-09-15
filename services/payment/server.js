@@ -6,6 +6,7 @@ import { runSplitPaymentSaga } from './src/saga.js';
 
 const database = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://tablesync:tablesync@localhost:5432/tablesync' });
 let broker;
+const rabbitUrl = process.env.RABBITMQ_URL ?? `amqp://${encodeURIComponent(process.env.RABBITMQ_DEFAULT_USER ?? 'guest')}:${encodeURIComponent(process.env.RABBITMQ_DEFAULT_PASS ?? 'guest')}@${process.env.RABBITMQ_HOST ?? 'localhost'}:${process.env.RABBITMQ_PORT ?? '5672'}`;
 const validOutcomes = new Set(['success', 'failure', 'timeout']);
 const envelope = (type, data) => ({ id: randomUUID(), version: 1, occurredAt: new Date().toISOString(), correlationId: randomUUID(), type, data });
 async function publish(type, data) { if (broker) broker.publish('tablesync.events', type, Buffer.from(JSON.stringify(envelope(type, data))), { persistent: true }); }
@@ -59,7 +60,7 @@ export function buildApp() {
 
 async function start() {
   await database.query('SELECT 1');
-  const connection = await amqp.connect(process.env.RABBITMQ_URL ?? 'amqp://guest:guest@localhost:5672');
+  const connection = await amqp.connect(rabbitUrl);
   broker = await connection.createChannel();
   await broker.assertExchange('tablesync.events', 'topic', { durable: true });
   await broker.assertQueue('tablesync.audit', { durable: true });
