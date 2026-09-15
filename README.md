@@ -16,7 +16,7 @@ docker compose up -d --build
 npm run dev
 ```
 
-Open `http://localhost:3000`. Use the role buttons on the login page to explore the seeded demo. The customer surface uses the Compose API gateway at port 8080 for table join, cart ownership, persistence, and WebSocket updates. `npm run dev:api` is available for an explicitly volatile gateway-only UI prototype.
+Open `http://localhost:3000`. Use the role buttons on the login page to explore the seeded demo. The customer surface uses the Compose API gateway at port 8080 for table join, cart ownership, persistence, and WebSocket updates. `npm run dev:api` starts an explicitly volatile gateway-only prototype on port 8083, so it can run alongside Compose; its health endpoint is `http://localhost:8083/health`.
 
 ## Repository map
 
