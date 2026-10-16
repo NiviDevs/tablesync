@@ -1,3 +1,5 @@
+> Historical plan: superseded as an active work instruction by the 2026-10-16 documentation baseline. Read `docs/README.md` and the proposed rebuild specification before using any steps below.
+
 # Hosted Guest Demo Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

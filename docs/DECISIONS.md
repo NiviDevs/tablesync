@@ -1,10 +1,5 @@
 # Decisions
 
-| Decision | Rationale |
-|---|---|
-| Next.js App Router | One typed frontend with customer, restaurant, and operations route groups. |
-| Fastify services | Small JavaScript services with domain ownership and health endpoints; metrics coverage remains limited. |
-| One Postgres database for Review 1 | Faster local setup while preserving logical table ownership. |
-| RabbitMQ, not Kafka | Queue and event needs are small and demonstrable. |
-| Deterministic mock payments | Demonstrates real Saga behavior without real-money risk or vendor setup. |
-| Compose first | Verify the local product flow, then CI/hosted preview. K3s/autoscaling remains future work. |
+The documentation baseline was reset on 2026-10-16. Read [REBUILD_SPEC.md](REBUILD_SPEC.md) for the proposed direction and [PROJECT_STATE.md](PROJECT_STATE.md) for current source-backed behavior. The rebuild is not yet implemented or approved.
+
+The previous document is preserved in [the historical archive](archive/2026-10-16/DECISIONS.md). It is not an active implementation instruction.

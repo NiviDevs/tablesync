@@ -1,8 +1,14 @@
-# Defense notes
+# Assessment claims and limits
 
-- **Why microservices?** Session, order, payment, and restaurant workflows have different responsibilities and scaling profiles; Review 1 keeps each intentionally small.
-- **Why one database?** It reduces operational cost during the prototype while schemas/table ownership prevent uncontrolled cross-domain writes.
-- **Why RabbitMQ?** It supports explicit asynchronous events and queue-based KEDA scaling without Kafka's operational overhead.
-- **Are payments real?** No. The mock provider is deliberately deterministic and models pending, processing, success, failure, timeout, and compensation.
-- **Why a Saga?** A split payment must either fully commit or compensate already successful simulated payments; a distributed database transaction is inappropriate across provider boundaries.
-- **What is actually verified?** Previous local Compose smoke tests exercised cart persistence and simulated payment commit/failure with order projection. There is no verified hosted deployment, full browser journey, live Ops dashboard or Kubernetes scaling demonstration. Some UI status labels are still static and must not be treated as telemetry.
+Use only claims supported by the current evidence ledger in [STATUS.md](STATUS.md).
+
+- The proposed system demonstrates container orchestration, probes, resource budgets, telemetry, load testing, and pod autoscaling.
+- Local Kubernetes is real Kubernetes. It does not establish managed-cloud deployment, cross-host resilience, or node autoscaling.
+- k6 creates synthetic traffic. Application metrics and replica observations must be real.
+- A public tunnel gives phones access to local compute; it does not relocate the backend to the cloud.
+- Payment is simulated. A table-level Saga demonstration does not establish independent diner confirmations or real settlement.
+- PostgreSQL is durable business storage; Redis is transient state; RabbitMQ transports the existing domain events.
+- One database with logical service ownership is a deadline tradeoff, not proof of independent database isolation.
+- HPA responding to load does not automatically prove improved latency. Report measured throughput, latency, and errors.
+
+Do not claim any proposed capability before its verification gate passes. The historical defense notes are [archived](archive/2026-10-16/DEFENSE.md).

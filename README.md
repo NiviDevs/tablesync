@@ -1,33 +1,40 @@
 # TableSync
 
-> One table. One order. Everyone pays their way.
+TableSync is a restaurant operations project for a cloud computing assessment. The immediate goal is a reliable seated-guest ordering flow and a measurable Kubernetes demonstration. The longer-term direction is a restaurant suite with customer history and business analytics.
 
-TableSync is a B2B2C collaborative dining platform. Guests join a restaurant table using a QR/table code, order together in real time, and pay their own share. Restaurants receive one consolidated order.
+## Start here
 
-## Current state
+Read [the documentation index](docs/README.md), then [current project state](docs/PROJECT_STATE.md).
 
-The repository is in Review 1 bootstrap. The web app contains the customer, restaurant, and operations surfaces with a local deterministic demo shell. Service and infrastructure contracts are established; live integrations are tracked in [docs/STATUS.md](docs/STATUS.md).
+- [Proposed design](docs/REBUILD_SPEC.md): scope, architecture, data ownership, reliability, telemetry, and acceptance criteria.
+- [Team handoff](docs/TEAM_HANDOFF.md): work packages, dependencies, ownership, and contributor instructions.
+- [Status](docs/STATUS.md): implementation evidence and remaining work.
+- [Event contracts](docs/EVENTS.md): existing service events; changes require producer and consumer review.
 
-## Quick start
+The design is a proposal for review, not a claim that the rebuild is implemented. No application code changed during this documentation reset.
+
+## Important current limitation
+
+There are currently three paths: the web UI uses Supabase `demo_*` tables directly; Compose runs a separate service-backed implementation; the Render blueprint selects an in-memory gateway. Starting Compose does **not** connect the current UI to those services.
+
+The existing commands are:
 
 ```bash
 npm install
-docker compose up -d --build
 npm run dev
+# Separate service stack; requires Docker:
+docker compose up -d --build
 ```
 
-Open `http://localhost:3000` for the landing page, `/app?table=SAGE-12` to enter a guest name, and `/restaurant` for the read-only SAGE-12 order board. The customer surface uses the Compose gateway at port 8080. `npm run dev:api` starts a volatile gateway-only prototype on port 8083 and does not support persisted checkout.
-
-Checkout currently simulates the entire table from one diner’s click. Independent diner payment, safe repeated checkout, restaurant completion actions and browser verification remain pending. Supabase client helpers and session refresh are installed, but login and backend authorization are not implemented. Put public Supabase settings from `.env.example` in `apps/web/.env.local`; see [deployment setup](docs/DEPLOYMENT.md).
+The browser demo needs the Supabase public environment settings and its migrations. Do not assume those migrations are applied. Its presentation policies are not production authorization. See [current state](docs/PROJECT_STATE.md) before exposing it publicly.
 
 ## Repository map
 
-- `apps/web` — Next.js application and product surfaces
-- `services/*` — independently containerized domain services
-- `packages/contracts` — versioned event and API domain contracts
-- `infra` — Compose, Kubernetes, observability, and load-test assets
-- `docs` — architecture, demo script, decisions, and project state
+- `apps/web`: Next.js guest, restaurant, sign-in, and Ops screens.
+- `services`: gateway, Session, Order, and Payment implementations; other directories include placeholders.
+- `packages/contracts`: existing event definitions and checks.
+- `infra`: PostgreSQL initialization/migrations and a small k6 health check.
+- `supabase/migrations`: separate browser-demo schema and policies.
+- `docs`: current documentation; `docs/archive` contains superseded material.
 
-See [docs/DEMO.md](docs/DEMO.md) for the Review 1 walkthrough and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the service map.
-
-The documented local-to-Supabase/cloud deployment path is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Payments are simulated. Kubernetes, live telemetry, and autoscaling remain unverified. A public tunnel is temporary access to local compute, not cloud hosting.

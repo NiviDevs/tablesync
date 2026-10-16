@@ -1,3 +1,5 @@
+> Scope note (2026-10-16): This document describes the existing service path, not the direct Supabase browser demo. Consumer names in the table include intended consumers; verify actual bindings in source. The audited active committed-payment consumer is Order. Rebuild changes must update this document and contract tests together.
+
 # Event contracts
 
 All events are JSON with `id`, `version`, `occurredAt`, `correlationId`, and `data`. Consumers must deduplicate by `id`.

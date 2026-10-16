@@ -1,10 +1,15 @@
-# Review 1 demo
+# Demonstration acceptance sequence
 
-1. Run `docker compose up -d --build`, then run `npm run dev`.
-2. Open `/app?table=SAGE-12` and enter a guest name. This is guest entry, not authentication or a generated QR code.
-3. Open a second customer session, join the same code, and add items; both views update through WebSockets.
-4. Start checkout and select **Simulate failure** for a participant. Show the persisted Saga compensation and voided fee ledger.
-5. Complete a simulated checkout and inspect `/restaurant` or `GET /v1/table-sessions/SAGE-12/orders`. One click currently simulates the entire table; do not present this as independent diner payment. The board is read-only. Repeated checkout can pay for the same cart again.
-6. Do not claim an autoscaling demo until Prometheus, KEDA, and real Kubernetes metrics are installed and verified.
+Status: proposed sequence, not a verified runbook. W7 must add exact tested commands and evidence.
 
-All payment and load controls are simulation/test behavior. There is no implemented reset UI or table turnover flow. Do not delete the database volume just to repeat the demo. Four-browser collaboration and the refreshed mobile UI still need verification; HTTP/build checks alone are insufficient.
+1. Identify environment and revision. Show which application and telemetry sources are running.
+2. Open a generated table URL on a phone. Join a second independent browser as another guest.
+3. Add separate guest items, demonstrate ownership, and show the owner table view updating.
+4. Submit a clearly labeled table-level simulated checkout. Retry safely and show one persistent kitchen order.
+5. Advance the kitchen order through preparation, ready, and served. Close the seating session without deleting history.
+6. Open real metrics and establish the one-replica baseline. Run the documented local k6 scenario.
+7. Show CPU, desired replicas, and actual ready replicas changing. Wait through cooldown and show scale-down.
+8. Replace an application pod and verify the committed order remains available.
+9. State the boundaries: local pod autoscaling, synthetic test traffic, simulated money, and temporary public access if tunneling.
+
+Save actual observations, failures, and timings in STATUS. Capture a backup recording of a real successful rehearsal. Do not use a recording as if it were live or represent a public tunnel as cloud compute.
