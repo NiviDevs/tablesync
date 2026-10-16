@@ -33,4 +33,4 @@ The inspected environment reports Linux, a Ryzen 9 6900HS, 16 logical CPUs, abou
 
 ## Next transition
 
-Review [the proposed design](REBUILD_SPEC.md), assign [work packages](TEAM_HANDOFF.md), and establish a runnable baseline before feature changes. Preserve the existing service slice while the browser is migrated. Do not drop either database's data as part of documentation cleanup.
+The user approved [the design](REBUILD_SPEC.md) on 2026-10-16. Review the [execution plans and assignments](TEAM_HANDOFF.md), then establish a runnable baseline before feature changes. Preserve the existing service slice while the browser is migrated. Do not drop either database's data as part of documentation cleanup.

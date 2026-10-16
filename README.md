@@ -6,12 +6,12 @@ TableSync is a restaurant operations project for a cloud computing assessment. T
 
 Read [the documentation index](docs/README.md), then [current project state](docs/PROJECT_STATE.md).
 
-- [Proposed design](docs/REBUILD_SPEC.md): scope, architecture, data ownership, reliability, telemetry, and acceptance criteria.
+- [Approved design](docs/REBUILD_SPEC.md): scope, architecture, data ownership, reliability, telemetry, and acceptance criteria.
 - [Team handoff](docs/TEAM_HANDOFF.md): work packages, dependencies, ownership, and contributor instructions.
 - [Status](docs/STATUS.md): implementation evidence and remaining work.
 - [Event contracts](docs/EVENTS.md): existing service events; changes require producer and consumer review.
 
-The design is a proposal for review, not a claim that the rebuild is implemented. No application code changed during this documentation reset.
+The design is approved; the detailed execution plans await review. The rebuild is not implemented. No application code changed during this documentation reset.
 
 ## Important current limitation
 

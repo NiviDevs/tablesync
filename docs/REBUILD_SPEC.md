@@ -1,8 +1,8 @@
-# TableSync assessment rebuild: proposed design
+# TableSync assessment rebuild: approved design
 
-Date: 2026-10-16. Status: **proposed; awaiting review**.
+Date: 2026-10-16. Status: **approved by the user on 2026-10-16; implementation pending**.
 
-This document defines the proposed destination, not current behavior. The user requested documentation and a team handoff, not implementation during this session. Review this specification before creating the detailed execution plan.
+This document defines the proposed destination, not current behavior. The user requested documentation and a team handoff, not implementation during this session. The user approved this specification. The [execution plans](superpowers/plans/2026-10-16-assessment-foundation.md) are now written and await their own review.
 
 ## 1. Intent and constraints
 
@@ -208,12 +208,12 @@ CI runs relevant unit/contract tests, typecheck, and a production build on a pin
 | Cloud engineering is the assessment priority | Confirmed intent | User direction |
 | Seated guests; no reservations | Confirmed intent | User direction |
 | Local Kubernetes acceptable | Confirmed intent | User direction |
-| Service-backed product; retire direct demo writes | Proposed | Shared logic and credible scaling evidence |
-| Polling for assessed UI; gateway stays singleton | Proposed | Avoid cross-replica WebSocket work during deadline |
-| Table-level simulated checkout for minimum scope | Proposed | Preserve Saga while deferring independent payer orchestration |
-| Session as first HPA target | Proposed, requires measurement | External durable state; validate workload suitability |
-| Public tunnel for temporary QR access | Proposed | No credit-card dependency; same local application |
-| CRM and permanent cloud hosting outside critical path | Proposed | Protect completion time |
+| Service-backed product; retire direct demo writes | Approved design; not implemented | Shared logic and credible scaling evidence |
+| Polling for assessed UI; gateway stays singleton | Approved design; not implemented | Avoid cross-replica WebSocket work during deadline |
+| Table-level simulated checkout for minimum scope | Approved design; not implemented | Preserve Saga while deferring independent payer orchestration |
+| Session as first HPA target | Approved candidate; requires measurement | External durable state; validate workload suitability |
+| Public tunnel for temporary QR access | Approved design; not implemented | No credit-card dependency; same local application |
+| CRM and permanent cloud hosting outside critical path | Approved design; not implemented | Protect completion time |
 
 ## References
 

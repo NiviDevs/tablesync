@@ -5,6 +5,7 @@ Baseline: 2026-10-16. No runtime verification was performed during the documenta
 | Area | Status | Evidence / next proof |
 |---|---|---|
 | Documentation reset | Verified (documentation checks only) | Local links in 16 active Markdown documents resolve; `git diff --check` passes; 11 archived originals match the baseline revision. |
+| Approved design and detailed execution plans | Documentation written; implementation pending | User approved the spec on 2026-10-16. Shared, product, and infrastructure plans await execution-plan review. |
 | Browser demo | Implemented, unverified | Supabase helpers and screens exist. Run the complete multi-browser flow against an identified database. |
 | Service slice | Implemented, unverified | Compose and service source exist. Rerun tests and persistence/checkout smoke checks. |
 | Staff and guest authorization | Proposed | Existing OTP plumbing and presentation policies do not satisfy the spec. |
@@ -38,3 +39,11 @@ Keep evidence small and reproducible. Do not commit credentials, customer data, 
 - Archive preservation: 11 historical originals compared byte-for-byte against baseline Git content.
 - Diff whitespace: `git diff --check` passes.
 - Limits: no application tests, hosted checks, migrations, or Kubernetes runs performed. The rebuild design remains proposed.
+
+## Design approval and execution planning — 2026-10-16
+
+- User approved REBUILD_SPEC after reviewing the documentation baseline.
+- Added three linked plans: shared foundation/integration, product integration, and cloud observability.
+- Plans define file ownership, public/internal interfaces, task dependencies, failure cases, verification commands, and acceptance evidence.
+- No application code, dependencies, infrastructure, or database state changed. Plan test commands are instructions for future execution, not claimed passing results.
+- Documentation verification: all relative links in 18 active/planning documents resolve; all three plans contain required sections and no TODO/TBD/FIXME placeholders; `git diff --check` passes.

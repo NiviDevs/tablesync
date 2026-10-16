@@ -5,8 +5,8 @@ Baseline date: 2026-10-16.
 ## Reading order
 
 1. [PROJECT_STATE.md](PROJECT_STATE.md): what the source currently contains and what was not verified.
-2. [REBUILD_SPEC.md](REBUILD_SPEC.md): proposed destination and acceptance criteria.
-3. [TEAM_HANDOFF.md](TEAM_HANDOFF.md): ownership, sequencing, and bounded work packages.
+2. [REBUILD_SPEC.md](REBUILD_SPEC.md): approved destination and acceptance criteria (implementation pending).
+3. [TEAM_HANDOFF.md](TEAM_HANDOFF.md): ownership, sequencing, and links to the three detailed execution plans.
 4. [STATUS.md](STATUS.md): evidence ledger, updated after each merged work package.
 5. [EVENTS.md](EVENTS.md): existing event contracts, updated when producers or consumers change.
 

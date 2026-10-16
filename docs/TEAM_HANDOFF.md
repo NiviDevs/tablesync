@@ -1,6 +1,14 @@
 # Team handoff
 
-Status: proposed work breakdown for the design review. This is not an approved execution plan or a claim that all work fits within two days. After specification approval, create one detailed implementation plan with exact commands and test cases; do not let each contributor design a different system.
+Status: specification approved on 2026-10-16. The detailed execution plans below are written and await review; no application implementation has started. This is not a claim that all work fits within two days.
+
+## Execution plans
+
+- [Shared foundation and integration](superpowers/plans/2026-10-16-assessment-foundation.md): both contributors complete F0/F1 before splitting; return to F2 at the end.
+- [Product integration](superpowers/plans/2026-10-16-product-integration.md): Contributor A completes P1–P5.
+- [Cloud observability](superpowers/plans/2026-10-16-cloud-observability.md): Contributor B completes C1–C5, respecting the shared dependency gates.
+
+Give an agent one task at a time with the shared contract and approved specification. Do not ask it to implement every plan independently.
 
 ## Shared rules
 
