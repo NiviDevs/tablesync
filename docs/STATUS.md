@@ -6,6 +6,7 @@ Baseline: 2026-10-16. No runtime verification was performed during the documenta
 |---|---|---|
 | Documentation reset | Verified (documentation checks only) | Local links in 16 active Markdown documents resolve; `git diff --check` passes; 11 archived originals match the baseline revision. |
 | Approved design and detailed execution plans | Documentation written; implementation pending | User approved the spec on 2026-10-16. Shared, product, and infrastructure plans await execution-plan review. |
+| F0 development checks | Verified locally | Node 22.23.3/npm 10.9.9 clean install, unit/contract tests, typecheck, production build, image builds, and isolated Compose/service smoke passed on 2026-10-17. See [Role A progress](progress/A.md). |
 | Browser demo | Implemented, unverified | Supabase helpers and screens exist. Run the complete multi-browser flow against an identified database. |
 | Service slice | Implemented, unverified | Compose and service source exist. Rerun tests and persistence/checkout smoke checks. |
 | Staff and guest authorization | Proposed | Existing OTP plumbing and presentation policies do not satisfy the spec. |
@@ -47,3 +48,30 @@ Keep evidence small and reproducible. Do not commit credentials, customer data, 
 - Plans define file ownership, public/internal interfaces, task dependencies, failure cases, verification commands, and acceptance evidence.
 - No application code, dependencies, infrastructure, or database state changed. Plan test commands are instructions for future execution, not claimed passing results.
 - Documentation verification: all relative links in 18 active/planning documents resolve; all three plans contain required sections and no TODO/TBD/FIXME placeholders; `git diff --check` passes.
+
+## F0 baseline execution — 2026-10-17
+
+- Work package: F0, Role A on `feat/product-integration`, isolated worktree
+  `/tmp/tablesync-role-a`; starting revision `079b178d108175af8024137fa463ad41c550c0cb`.
+- Commit: this F0 commit (`chore: establish reproducible development checks`).
+- Environment: Linux x64. Initial host Node 26.11.1/npm 12.2.0; no fresh-worktree
+  dependencies. Initial `npm test`, `npm run typecheck`, and `npm run build`
+  failed for missing dependencies; these were not passing baseline results.
+- Supported runtime: official Node 22.23.3 archive verified against its SHA-256,
+  bundled npm 10.9.9. Runtime installed under `/tmp`, system runtime unchanged.
+- Checks: `npm ci` passed (134 packages); `npm test` passed all four workspace
+  suites; `npm run typecheck` passed; production build passed with TypeScript
+  checking enabled and synthetic public Supabase settings from CI.
+- Observed failures: without Supabase settings, legacy demo prerendering fails.
+  Sandboxed Next.js detached TypeScript CLI capture was empty; approved build
+  outside the sandbox passed. The old comment attributing this to Node 26 was
+  removed with `ignoreBuildErrors`.
+- Docker: user installed Docker Engine 29.9.0/Compose 5.6.0 during execution.
+  Access verified through a shell refreshing the account's Docker group.
+- Smoke rejection check: pointed at an actual local-demo gateway, the new smoke
+  script returned exit 1 as required.
+- All four service images built and asserted the pinned runtime pair.
+- `docker compose -p tablesync-role-a-f0 up -d --build --wait --wait-timeout 180`
+  exited 0, with all seven containers healthy. `npm run smoke:services` passed
+  through the gateway to persisted Session/Order data.
+- Limits: CI workflow is added, not remotely executed. Migrations, browser integration, and Kubernetes remain unverified. Unsupported `next lint` was removed; lint is not a passing gate.

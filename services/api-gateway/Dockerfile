@@ -1,7 +1,7 @@
-FROM node:22-alpine
+FROM node:22.23.3-alpine
 WORKDIR /app
 COPY package.json ./
-RUN npm install --omit=dev
+RUN test "$(node --version)" = "v22.23.3" && test "$(npm --version)" = "10.9.9" && npm install --omit=dev
 COPY . .
 EXPOSE 8080
 CMD ["node", "server.js"]
