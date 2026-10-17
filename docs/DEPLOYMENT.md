@@ -50,10 +50,68 @@ On the assessment host, Docker group changes did not update the already running
 IDE process. A new shell using `newgrp docker` picked up the account's assigned
 group. Restarting the IDE after a group change is another way to refresh it.
 
+## Service migrations (F1)
+
+`npm run db:migrate` uses server-only `DATABASE_URL` and optionally
+`MIGRATIONS_DIR` (default `infra/postgres/migrations`). It serializes runners with
+a PostgreSQL advisory lock, applies each SQL file in a transaction, and stores
+filename/SHA-256 in `schema_migrations`. Missing or modified applied files and
+out-of-order additions fail before further SQL. The process exits nonzero on
+failure. It never deletes data to obtain a clean schema.
+
+On an empty service database:
+
+```bash
+DATABASE_URL=postgresql://tablesync:tablesync@localhost:5432/tablesync npm run db:migrate
+```
+
+`001-initial-schema.sql` is a byte-for-byte copy of the preserved `init.sql`.
+Existing `002`/`003` remain unchanged and run idempotently after 001. Supabase SQL
+is a separate history; do not point this runner at its directory/database or
+rename its duplicate migration versions.
+
+Existing Compose volumes already initialized by `init.sql` need an explicit
+baseline. First stop product writes, capture a revision/schema inventory, back
+up the intended database to a private path outside Git, and verify the dump.
+For the isolated synthetic F0 stack the following backup/baseline was tested:
+
+```bash
+docker compose -p tablesync-role-a-f0 exec -T postgres pg_dump -U tablesync --no-owner --no-acl tablesync > /tmp/tablesync-f0-pre-migrations.sql
+# Inspect the dump and current database before acknowledging the backup.
+DATABASE_URL=postgresql://tablesync:tablesync@localhost:5432/tablesync BASELINE_BACKUP_CONFIRMED=yes npm run db:migrate -- --baseline
+DATABASE_URL=postgresql://tablesync:tablesync@localhost:5432/tablesync npm run db:migrate
+npm run smoke:services
+```
+
+The baseline command compares existing columns/defaults and constraints with
+the original schema in a transactional inspection schema before recording 001;
+it rejects drift and requires `BASELINE_BACKUP_CONFIRMED=yes`. It does not verify
+a backup's restorability for you. The acknowledgement is only for that one
+invocation. Normal subsequent runs omit `--baseline`. Schema drift requires
+inspection and an agreed additive repair; do not edit already applied SQL or
+force ledger entries. A baseline of a real database is separate operator work,
+not authorized by the synthetic database test.
+
+Run the migration integration suite only against an explicitly disposable
+database with `test` as a name component:
+
+```bash
+TEST_DATABASE_URL=postgresql://tablesync:tablesync@localhost:5432/tablesync_test_foundation npm run test:migrations
+```
+
+Tests create unique temporary schemas and remove only those schemas. They check
+repeat/concurrent application, checksum rejection, SQL rollback, and safe
+existing-schema baselining. They do not erase the default application database.
+
+Rollback is an application revision rollback only while the additive schema
+remains compatible. Applied migrations/checksums remain in place. There are no
+automatic down migrations. Future data conversions require an owner-reviewed
+backup/restore procedure; retaining old columns is not proof of a tested restore.
+
 ## Remaining deployment gates
 
-Kubernetes, migrations, public access, and a complete restaurant journey still
-require verification under F1, P1–P5, C1–C5, and F2. Exact checks and current
+Kubernetes, public access, and a complete restaurant journey still require
+verification under P1–P5, C1–C5, and F2. Exact checks and current
 blockers are recorded in [STATUS.md](STATUS.md) and [Role A progress](progress/A.md).
 
 [Previous deployment notes](archive/2026-10-16/DEPLOYMENT.md) are historical and contain stale claims. Never run database volume deletion as a routine migration or reset.

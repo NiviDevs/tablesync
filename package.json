@@ -10,7 +10,10 @@
     "dev:api": "npm run dev --workspace=@tablesync/api-gateway",
     "build": "npm run build --workspace=@tablesync/web",
     "smoke:services": "node scripts/service-smoke.mjs",
+    "db:migrate": "node infra/postgres/migrate.mjs",
+    "test:migrations": "node --test infra/postgres/test/migrations.test.mjs",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
-  }
+  },
+  "dependencies": { "pg": "^8.13.0" }
 }

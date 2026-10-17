@@ -8,7 +8,7 @@ The original checkout remains on `main`; B-owned files are untouched.
 
 - Scope: reproducible Node/npm pair, normal build type checking, CI, legacy
   service smoke, and deployment/evidence notes.
-- Commit: this F0 commit (`chore: establish reproducible development checks`).
+- Commit: `97a8733` (`chore: establish reproducible development checks`).
 - Runtime: verified SHA-256 of official Node 22.23.3 Linux x64 archive; bundled
   npm 10.9.9. Installed under `/tmp`, without changing the system runtime.
 - Initial host: Node 26.11.1/npm 12.2.0. Fresh-worktree tests/typecheck/build
@@ -31,3 +31,33 @@ The original checkout remains on `main`; B-owned files are untouched.
 - Contract/migration changes: none.
 - Integration request: B should use the runtime pins from this branch once the
   FOUNDATION CHECKPOINT is published. F1 remains required before the foundation checkpoint.
+
+## F1 — complete, 2026-10-17
+
+- Prerequisite: F0 `97a8733`.
+- Commit: this F1 commit (`feat: define service contracts and repeatable migrations`),
+  published as FOUNDATION CHECKPOINT after commit creation.
+- Added exact shared HTTP types and [API contract](../API.md). Public routes are
+  specified, not yet implemented; P1–P4 supply them. Existing v1 events/units are
+  unchanged; v2 types/producers/event documentation land together in P3.
+- Added a declared root `pg` dependency (existing locked package), migration
+  runner, and byte-identical 001 bootstrap of `init.sql`. Existing 002/003 and
+  Supabase migrations are untouched.
+- Red check: six real-PostgreSQL tests failed for the absent runner before
+  implementation. Green check: all six passed in disposable database
+  `tablesync_test_foundation` using unique temporary schemas.
+- Verified repeat runs preserve rows; three concurrent runners apply once;
+  changed applied SQL fails before later SQL; failed SQL rolls back; existing
+  schema needs acknowledged backup and validated baseline; schema drift fails.
+- Backed up isolated F0 synthetic database to `/tmp/tablesync-f0-pre-migrations.sql`
+  outside Git, verified dump completion, baselined after schema validation,
+  reran with no pending migrations, and passed service smoke again.
+- Shared HTTP type source compiled with TypeScript strict/noEmit; diff whitespace
+  and byte-preservation checks passed.
+- Integration request to B: merge this FOUNDATION CHECKPOINT before dependent
+  C1/C2 work. Ports remain 8080/8081/8082/8083 and web 3000. Use the documented
+  Node/npm pair and migration CLI. Existing `/health` is process health; distinct
+  readiness/metrics remain C1 work. Submit service hooks/shared dependency or
+  Compose changes to A. Operator access/registration depends on P1 auth.
+- Blockers: none for P1. B's contract/port/health review remains a coordination
+  action; no B infrastructure implementation or measured telemetry is claimed.
