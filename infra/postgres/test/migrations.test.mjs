@@ -17,7 +17,13 @@ const realMigrations = fileURLToPath(new URL('../migrations/', import.meta.url))
 async function fixture(t, real = false) {
   const admin = new pg.Pool({ connectionString });
   const schema = `migration_test_${randomUUID().replaceAll('-', '')}`;
-  await admin.query('CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public');
+  const setup = await admin.connect();
+  try {
+    await setup.query('BEGIN');
+    await setup.query("SELECT pg_advisory_xact_lock(hashtext('tablesync.test_extension'))");
+    await setup.query('CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public');
+    await setup.query('COMMIT');
+  } finally { setup.release(); }
   await admin.query(`CREATE SCHEMA ${schema}`);
   const url = new URL(connectionString);
   url.searchParams.set('options', `-csearch_path=${schema},public`);

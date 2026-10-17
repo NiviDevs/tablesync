@@ -1,75 +1,68 @@
 import Fastify from 'fastify';
 import amqp from 'amqplib';
-import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
-import { runSplitPaymentSaga } from './src/saga.js';
+import { pathToFileURL } from 'node:url';
+import { createPaymentStore } from './src/persistence.js';
+import { createOutbox } from './src/outbox.js';
 
 const database = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://tablesync:tablesync@localhost:5432/tablesync' });
+const store = createPaymentStore({ pool: database });
+const rabbitUrl = process.env.RABBITMQ_URL ?? 'amqp://guest:guest@localhost:5672';
+let connection;
 let broker;
-const rabbitUrl = process.env.RABBITMQ_URL ?? `amqp://${encodeURIComponent(process.env.RABBITMQ_DEFAULT_USER ?? 'guest')}:${encodeURIComponent(process.env.RABBITMQ_DEFAULT_PASS ?? 'guest')}@${process.env.RABBITMQ_HOST ?? 'localhost'}:${process.env.RABBITMQ_PORT ?? '5672'}`;
-const validOutcomes = new Set(['success', 'failure', 'timeout']);
-const envelope = (type, data) => ({ id: randomUUID(), version: 1, occurredAt: new Date().toISOString(), correlationId: randomUUID(), type, data });
-async function publish(type, data) { if (broker) broker.publish('tablesync.events', type, Buffer.from(JSON.stringify(envelope(type, data))), { persistent: true }); }
-const feeFor = amount => Math.ceil(amount / 100);
+const outbox = createOutbox({ pool: database, getChannel: () => broker });
 
-async function sagaView(sagaId) {
-  const saga = await database.query('SELECT id, session_id AS "sessionId", status, total_amount AS "totalAmount", platform_fee AS "platformFee", created_at AS "createdAt", completed_at AS "completedAt" FROM saga_state WHERE id=$1', [sagaId]);
-  if (!saga.rowCount) return null;
-  const intents = await database.query('SELECT id AS "intentId", participant_id AS "participantId", amount, outcome, status FROM payment_intents WHERE saga_id=$1 ORDER BY created_at', [sagaId]);
-  return { ...saga.rows[0], simulated: true, intents: intents.rows };
-}
-
-async function persistSaga({ sessionId, idempotencyKey, payments }) {
-  const existing = await database.query('SELECT id FROM saga_state WHERE idempotency_key=$1', [idempotencyKey]);
-  if (existing.rowCount) return { replayed: true, saga: await sagaView(existing.rows[0].id), events: [] };
-  const saga = await runSplitPaymentSaga({ sagaId: randomUUID(), payments });
-  const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const platformFee = feeFor(totalAmount);
-  const client = await database.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query('INSERT INTO saga_state (id,idempotency_key,session_id,status,total_amount,platform_fee,completed_at) VALUES ($1,$2,$3,$4,$5,$6,now())', [saga.sagaId, idempotencyKey, sessionId, saga.status, totalAmount, platformFee]);
-    for (const attempt of saga.attempts) {
-      const compensation = saga.compensations.find(entry => entry.intentId === attempt.intentId);
-      const outcome = attempt.states.at(-1) === 'SUCCEEDED' ? 'success' : attempt.states.at(-1) === 'TIMED_OUT' ? 'timeout' : 'failure';
-      const status = compensation ? 'REFUNDED' : attempt.states.at(-1);
-      await client.query('INSERT INTO payment_intents (id,saga_id,participant_id,amount,outcome,status) VALUES ($1,$2,$3,$4,$5,$6)', [attempt.intentId, saga.sagaId, attempt.participantId, attempt.amount, outcome, status]);
-      await client.query('INSERT INTO payment_attempts (intent_id,provider,state_history) VALUES ($1,$2,$3)', [attempt.intentId, 'mock', JSON.stringify(attempt.states)]);
-    }
-    await client.query('INSERT INTO platform_fee_ledger (saga_id,amount,status) VALUES ($1,$2,$3)', [saga.sagaId, platformFee, saga.status === 'COMMITTED' ? 'RECORDED' : 'VOIDED']);
-    await client.query('COMMIT');
-  } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
-  return { replayed: false, saga: await sagaView(saga.sagaId), events: saga.events };
-}
-
-export function buildApp({ internalSecret = process.env.INTERNAL_API_SECRET } = {}) {
-  const app = Fastify({ logger: true });
+export function buildApp({ internalSecret = process.env.INTERNAL_API_SECRET, paymentStore = store } = {}) {
+  const app = Fastify({ logger: true, bodyLimit: 16 * 1024 });
   app.addHook('onRequest', async (request, reply) => {
     if (request.url.startsWith('/v1/') && (!internalSecret || request.headers.authorization !== `Bearer ${internalSecret}`)) {
       return reply.code(internalSecret ? 401 : 503).send({ error: { code: 'INTERNAL_AUTH_REQUIRED', message: 'Private service credential required' }, requestId: request.id });
     }
   });
-  app.get('/health', async () => { await database.query('SELECT 1'); return { service: 'payment', status: 'ok', provider: 'mock', simulated: true, rabbitmq: Boolean(broker) }; });
-  app.get('/v1/payment-sagas/:id', async (request, reply) => { const saga = await sagaView(request.params.id); return saga ?? reply.code(404).send({ error: 'payment saga not found' }); });
+  app.setErrorHandler((error, request, reply) => {
+    const status = error.statusCode >= 400 && error.statusCode < 500 ? error.statusCode : 503;
+    if (status >= 500) request.log.error({ err: error }, 'payment request failed');
+    reply.code(status).send({ error: { code: error.code ?? 'PAYMENT_UNAVAILABLE', message: status >= 500 ? 'Payment service is unavailable' : error.message }, requestId: request.id });
+  });
+  app.get('/health', async () => { await database.query('SELECT 1'); return { service: 'payment', status: 'ok', simulated: true, provider: 'mock', rabbitmq: Boolean(broker) }; });
+  app.get('/v1/payment-sagas/by-checkout/:id', async (request, reply) =>
+    (await paymentStore.getByCheckout(request.params.id)) ?? reply.code(404).send({ error: { code: 'PAYMENT_NOT_FOUND', message: 'Payment not found' }, requestId: request.id }));
   app.post('/v1/payment-sagas', async (request, reply) => {
-    const { sessionId, idempotencyKey, payments } = request.body ?? {};
-    if (!sessionId || !idempotencyKey || !Array.isArray(payments) || !payments.length || payments.some(payment => !payment?.participantId || !Number.isInteger(payment.amount) || payment.amount <= 0 || !validOutcomes.has(payment.outcome))) return reply.code(400).send({ error: 'sessionId, idempotencyKey, and non-empty deterministic payments are required' });
-    try {
-      const result = await persistSaga({ sessionId, idempotencyKey, payments });
-      for (const event of result.events) await publish(event.type, { ...event.data, sessionId, totalAmount: result.saga.totalAmount });
-      return reply.code(result.replayed ? 200 : 201).send(result.saga);
-    } catch (error) { request.log.error(error); return reply.code(500).send({ error: 'could not persist simulated payment saga' }); }
+    const result = await paymentStore.persistSaga(request.body ?? {});
+    return reply.code(result.replayed ? 200 : 201).send(result.saga);
   });
   return app;
 }
-
-async function start() {
-  await database.query('SELECT 1');
-  const connection = await amqp.connect(rabbitUrl);
-  broker = await connection.createChannel();
+async function connectBroker() {
+  connection = await amqp.connect(rabbitUrl);
+  broker = await connection.createConfirmChannel();
+  broker.on('error', () => {});
+  broker.on('close', () => { broker = undefined; });
+  connection.on('error', () => {});
+  connection.on('close', () => { broker = undefined; });
   await broker.assertExchange('tablesync.events', 'topic', { durable: true });
   await broker.assertQueue('tablesync.audit', { durable: true });
   await broker.bindQueue('tablesync.audit', 'tablesync.events', '#');
-  await buildApp().listen({ port: Number(process.env.PORT ?? 8083), host: '0.0.0.0' });
 }
-if (process.argv[1]?.endsWith('server.js')) start();
+async function start() {
+  if (!process.env.INTERNAL_API_SECRET) throw new Error('INTERNAL_API_SECRET is required');
+  await database.query('SELECT 1');
+  await connectBroker();
+  const app = buildApp();
+  let running = false;
+  const timer = setInterval(async () => {
+    if (running) return;
+    running = true;
+    try { if (!broker) await connectBroker(); await outbox.flushOutbox(); }
+    catch (error) { app.log.error({ err: error }, 'payment delivery pending'); }
+    finally { running = false; }
+  }, 5000);
+  await app.listen({ port: Number(process.env.PORT ?? 8083), host: '0.0.0.0' });
+  let stopping = false;
+  async function stop() {
+    if (stopping) return; stopping = true;
+    clearInterval(timer); await app.close(); await connection?.close(); await database.end();
+  }
+  process.once('SIGTERM', stop); process.once('SIGINT', stop);
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) start();

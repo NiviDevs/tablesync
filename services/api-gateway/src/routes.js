@@ -82,5 +82,25 @@ export function registerProductRoutes(app, { auth, internalSecret, sessionUrl, o
     return callOrder(`/v1/sessions/${identity.sessionId}/cart/items/${encodeURIComponent(request.params.menuItemId)}`,
       { method, body: request.body, identity });
   } });
+  app.post('/v1/sessions/:id/checkouts', async (request, reply) => {
+    if (!request.body || Object.keys(request.body).some(k => !['operationKey', 'expectedRevision'].includes(k))) fail(400, 'INVALID_CHECKOUT', 'Only operationKey and expectedRevision are accepted');
+    const identity = await requireGuest(request, request.params.id, { open: true });
+    const { replayed, ...checkout } = await callOrder('/v1/checkouts', { method: 'POST', identity,
+      body: { ...request.body, sessionId: identity.sessionId, participantId: identity.participantId } });
+    return reply.code(replayed || checkout.orderId ? 200 : 202).send(checkout);
+  });
+  async function memberCheckout(request) {
+    const identity = await requireGuest(request);
+    const checkout = await callOrder(`/v1/checkouts/${encodeURIComponent(request.params.id)}`, { identity });
+    if (checkout.sessionId !== identity.sessionId) fail(403, 'GUEST_SCOPE_MISMATCH', 'Checkout belongs to another seating');
+    return { identity, checkout };
+  }
+  app.get('/v1/checkouts/:id', async request => (await memberCheckout(request)).checkout);
+  app.post('/v1/checkouts/:id/retry', async (request, reply) => {
+    if (!request.body || Object.keys(request.body).some(k => k !== 'operationKey')) fail(400, 'INVALID_CHECKOUT', 'Only operationKey is accepted');
+    const { identity } = await memberCheckout(request);
+    const { replayed, ...checkout } = await callOrder(`/v1/checkouts/${encodeURIComponent(request.params.id)}/retry`, { method: 'POST', body: request.body, identity });
+    return reply.code(replayed ? 200 : 202).send(checkout);
+  });
   return { callSession, callOrder, requireGuest, auth };
 }

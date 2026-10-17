@@ -11,8 +11,8 @@ Baseline: 2026-10-16. No runtime verification was performed during the documenta
 | Browser demo | Implemented, unverified | Supabase helpers and screens exist. Run the complete multi-browser flow against an identified database. |
 | Service slice | Implemented, unverified | Compose and service source exist. Rerun tests and persistence/checkout smoke checks. |
 | Staff and guest authorization | Proposed | Existing OTP plumbing and presentation policies do not satisfy the spec. |
-| One authoritative browser/API path | Proposed | Browser currently bypasses services. |
-| Checkout and kitchen correctness | Proposed | Snapshot, retries, state transitions, and duplicate tests required. |
+| One authoritative browser/API path | Backend ready; UI pending P4 | P1–P3 table/cart/checkout APIs pass local tests; browser still uses Supabase. |
+| Checkout and kitchen correctness | Checkout verified locally; kitchen pending P4 | Nineteen integration tests and actual Compose checkout delivery pass. |
 | Kubernetes deployment | Proposed | No manifests or verified cluster. |
 | Prometheus/Grafana/Ops | Proposed | Preview UI and limited service metrics only. |
 | HPA and k6 evidence | Proposed | Existing k6 asset checks health only. |
@@ -104,3 +104,19 @@ Keep evidence small and reproducible. Do not commit credentials, customer data, 
 - Limits: backup restore was not rehearsed; application rollback must retain
   compatible additive schema. Browser journey, access controls, readiness,
   Kubernetes, metrics, and autoscaling remain unverified.
+
+## P1–P3 product backend integration — 2026-10-17
+
+- Prerequisites/commits: foundation `66ea50c`, P1 `696f572`, P2 `ac2294f`,
+  P3 this commit. Role A worktree remains isolated; main and B-owned files untouched.
+- Checks: workspace tests pass; 19 database integration tests pass on a fresh
+  disposable PostgreSQL database. Shared HTTP/event types compile.
+- Actual Compose checkout smoke passed through gateway, Payment, RabbitMQ, and
+  Order. Replayed operation returned the same ID and delivered one persistent
+  order for 68000 paise. This is a simulated table payment.
+- Contracts/migrations: API.md and EVENTS.md record the new scoped routes, explicit
+  money, immutable snapshots, v2 events, and preserved v1 history; additive 004–007.
+- Fault evidence uses injected responses/confirm callbacks. No real broker-restart
+  rehearsal, browser journey, live Supabase staff setup, or cluster claim yet.
+- Per user direction, live staff account provisioning does not block the educational
+  demo implementation; local generated-key auth tests remain the verification.

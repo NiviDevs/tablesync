@@ -83,7 +83,7 @@ The original checkout remains on `main`; B-owned files are untouched.
 
 ## P2 — complete, 2026-10-17
 
-- Prerequisite: P1 `696f572`. Commit: this P2 commit.
+- Prerequisite: P1 `696f572`. Commit: `ac2294f`.
 - Atomic set/remove with cart revisions, token-derived ownership, server menu
   prices, frozen/sealed checks, and integer INR minor units.
 - Migration 005 adds minor columns/catalog and records the one-time conversion;
@@ -92,3 +92,24 @@ The original checkout remains on `main`; B-owned files are untouched.
   all workspace tests including gateway forged-owner/price regression pass;
   `git diff --check` passes. Paneer ×2 = 68000 paise; a stale retry cannot add more.
 - No B-owned files or public contract changes. Next: P3 immutable checkout.
+
+## P3 — complete, 2026-10-17
+
+- Prerequisite: P2 `ac2294f`. Commit: this P3 commit.
+- Added immutable checkout attempts, Payment payload idempotency, stored event
+  envelopes/outboxes, v2 snapshot projection, reconciliation, and bounded bad-event
+  handling. Original Saga success/failure/timeout tests remain intact.
+- Migrations 006/007 are additive. Event contracts and EVENTS.md updated together;
+  v1 units/history remain explicit and the new consumer excludes v1.
+- Checks: missing-module red run; corrected a SQL UUID/text comparison found by
+  real database tests. Final workspace tests and 19 integration tests pass, also
+  on a freshly created disposable database. Shared types compile; whitespace passes.
+- Injected checks cover lost HTTP response, duplicate delivery, failed compensation,
+  new failed-attempt identity, and restart after publish/before marking in both
+  outboxes. These are injected faults, not a recorded real broker restart.
+- Actual Compose gateway→Payment→RabbitMQ→Order smoke passed: immutable total
+  68000 paise, replay retained the checkout ID, and a persistent order was delivered.
+- CI adds isolated database/Compose checks; remote CI has not been executed.
+- Integration request: Order now needs PAYMENT_SERVICE_URL. Apply 006/007 before
+  new images; B must preserve the v2 durable queue/dead-letter setup and avoid
+  replacing persisted outbox IDs. Next: P4 kitchen/closure and browser wiring.

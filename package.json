@@ -12,6 +12,7 @@
     "smoke:services": "node scripts/service-smoke.mjs",
     "db:migrate": "node infra/postgres/migrate.mjs",
     "test:migrations": "node --test infra/postgres/test/migrations.test.mjs",
+    "test:integration": "node scripts/integration-test.mjs",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },

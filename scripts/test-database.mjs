@@ -11,7 +11,13 @@ export async function testDatabase(t) {
   assert.match(decodeURIComponent(url.pathname.slice(1)), /(?:^|_)test(?:_|$)/, 'refusing non-test database');
   const admin = new pg.Pool({ connectionString });
   const schema = `product_test_${randomUUID().replaceAll('-', '')}`;
-  await admin.query('CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public');
+  const setup = await admin.connect();
+  try {
+    await setup.query('BEGIN');
+    await setup.query("SELECT pg_advisory_xact_lock(hashtext('tablesync.test_extension'))");
+    await setup.query('CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public');
+    await setup.query('COMMIT');
+  } finally { setup.release(); }
   await admin.query(`CREATE SCHEMA ${schema}`);
   url.searchParams.set('options', `-csearch_path=${schema},public`);
   const pool = new pg.Pool({ connectionString: url.href });

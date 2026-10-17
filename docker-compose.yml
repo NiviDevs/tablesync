@@ -53,6 +53,7 @@ services:
       DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
       SESSION_SERVICE_URL: http://session:8081
+      PAYMENT_SERVICE_URL: http://payment:8083
     depends_on:
       postgres: { condition: service_healthy }
       session: { condition: service_healthy }
