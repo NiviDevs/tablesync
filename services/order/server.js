@@ -2,30 +2,26 @@ import Fastify from 'fastify';
 import amqp from 'amqplib';
 import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
+import { createCartStore } from './src/cart.js';
 
 const database = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://tablesync:tablesync@localhost:5432/tablesync' });
 const sessionUrl = process.env.SESSION_SERVICE_URL ?? 'http://localhost:8081';
-const menu = [{ id: 'dumplings', name: 'Crispy corn dumplings', price: 260, emoji: '🥟' }, { id: 'paneer', name: 'Smoked butter paneer', price: 340, emoji: '🍛' }, { id: 'noodles', name: 'Chilli garlic noodles', price: 280, emoji: '🍜' }, { id: 'milk-cake', name: 'Saffron milk cake', price: 190, emoji: '🍮' }];
 let broker;
 const rabbitUrl = process.env.RABBITMQ_URL ?? `amqp://${encodeURIComponent(process.env.RABBITMQ_DEFAULT_USER ?? 'guest')}:${encodeURIComponent(process.env.RABBITMQ_DEFAULT_PASS ?? 'guest')}@${process.env.RABBITMQ_HOST ?? 'localhost'}:${process.env.RABBITMQ_PORT ?? '5672'}`;
 
-async function cartFor(sessionId) {
-  const found = await database.query('SELECT id FROM carts WHERE session_id=$1', [sessionId]);
-  if (found.rowCount) return found.rows[0];
-  const cart = { id: randomUUID() };
-  await database.query('INSERT INTO carts (id,session_id) VALUES ($1,$2)', [cart.id, sessionId]);
-  return cart;
-}
 const envelope = (type, data, correlationId = randomUUID()) => ({ id: randomUUID(), version: 1, occurredAt: new Date().toISOString(), correlationId, type, data });
 async function publish(type, data, correlationId) {
   if (!broker) return;
   broker.publish('tablesync.events', type, Buffer.from(JSON.stringify(envelope(type, data, correlationId))), { persistent: true });
   await broker.waitForConfirms();
 }
-async function sessionFor(sessionId) {
+async function tableFor(sessionId) {
   const response = await fetch(`${sessionUrl}/v1/sessions/id/${sessionId}`, { headers: { authorization: `Bearer ${process.env.INTERNAL_API_SECRET}` }, signal: AbortSignal.timeout(4000) });
-  if (!response.ok) throw new Error(`session ${sessionId} is unavailable`);
-  const table = await response.json();
+  if (!response.ok) throw Object.assign(new Error('Session is unavailable'), { statusCode: response.status, code: 'SESSION_UNAVAILABLE' });
+  return response.json();
+}
+async function sessionFor(sessionId) {
+  const table = await tableFor(sessionId);
   return { id: table.session.id, tableCode: table.code, restaurant: 'Juniper House', tableName: table.name, participants: table.session.participants };
 }
 async function orderView(orderId) {
@@ -85,21 +81,18 @@ export function buildApp() {
     }
   });
   app.get('/health', async () => { await database.query('SELECT 1'); return { service: 'order', status: 'ok', rabbitmq: Boolean(broker) }; });
-  app.get('/v1/carts/:sessionId', async request => {
-    const cart = await cartFor(request.params.sessionId);
-    const items = await database.query('SELECT id,menu_item_id AS "menuItemId",owner_id AS "ownerId",item_name AS name,unit_price AS price,emoji,quantity FROM cart_items WHERE cart_id=$1 ORDER BY created_at', [cart.id]);
-    return { ...cart, sessionId: request.params.sessionId, items: items.rows, subtotal: items.rows.reduce((total, item) => total + item.price * item.quantity, 0) };
+  const cartStore = createCartStore({ pool: database, sessionClient: tableFor });
+  app.setErrorHandler((error, request, reply) => {
+    const status = error.statusCode >= 400 && error.statusCode < 500 ? error.statusCode : 503;
+    if (status >= 500) request.log.error({ err: error }, 'order request failed');
+    reply.code(status).send({ error: { code: error.code ?? 'ORDER_UNAVAILABLE', message: status >= 500 ? 'Order service is unavailable' : error.message }, requestId: request.id });
   });
-  app.post('/v1/carts/:sessionId/items', async (request, reply) => {
-    const { participantId, menuItemId } = request.body ?? {}; const item = menu.find(entry => entry.id === menuItemId);
-    if (!participantId || !item) return reply.code(400).send({ error: 'participantId and valid menuItemId are required' });
-    let session; try { session = await sessionFor(request.params.sessionId); } catch { return reply.code(503).send({ error: 'session service unavailable' }); }
-    if (!session.participants.some(participant => participant.id === participantId)) return reply.code(403).send({ error: 'participant is not part of this table session' });
-    const cart = await cartFor(request.params.sessionId);
-    await database.query('INSERT INTO cart_items (id,cart_id,menu_item_id,owner_id,item_name,unit_price,emoji,quantity) VALUES ($1,$2,$3,$4,$5,$6,$7,1) ON CONFLICT (cart_id,menu_item_id,owner_id) DO UPDATE SET quantity=cart_items.quantity+1', [randomUUID(), cart.id, item.id, participantId, item.name, item.price, item.emoji]);
-    await publish('cart.item_added.v1', { sessionId: request.params.sessionId, item: { menuItemId, ownerId: participantId } });
-    return app.inject({ method: 'GET', url: `/v1/carts/${request.params.sessionId}`, headers: { authorization: `Bearer ${process.env.INTERNAL_API_SECRET}` } }).then(response => response.json());
-  });
+  app.get('/v1/menu', request => cartStore.listMenu(request.headers['x-restaurant-id']));
+  app.get('/v1/sessions/:id/cart', request => cartStore.readCart(request.params.id));
+  app.put('/v1/sessions/:id/cart/items/:menuItemId', request => cartStore.setQuantity({ ...request.body,
+    sessionId: request.params.id, menuItemId: request.params.menuItemId, participantId: request.headers['x-participant-id'] }));
+  app.delete('/v1/sessions/:id/cart/items/:menuItemId', request => cartStore.removeItem({ ...request.body,
+    sessionId: request.params.id, menuItemId: request.params.menuItemId, participantId: request.headers['x-participant-id'] }));
   app.get('/v1/orders/:id', async (request, reply) => (await orderView(request.params.id)) ?? reply.code(404).send({ error: 'order not found' }));
   app.get('/v1/orders', async request => {
     const { sessionId, restaurantName } = request.query ?? {}; const filters = []; const values = [];

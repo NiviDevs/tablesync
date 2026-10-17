@@ -64,7 +64,7 @@ The original checkout remains on `main`; B-owned files are untouched.
 
 ## P1 — complete for local demo, 2026-10-17
 
-- Prerequisite: foundation `66ea50c`. Commit: this P1 commit.
+- Prerequisite: foundation `66ea50c`. Commit: `696f572`.
 - Added 004 registry/lifecycle migration, conflict-safe joining, server-generated
   participant IDs, scoped guest JWTs, staff membership/operator checks, private
   service bearer checks, and bounded gateway requests.
@@ -80,3 +80,15 @@ The original checkout remains on `main`; B-owned files are untouched.
   unchanged. New service runtime uses the frozen API; legacy unsafe public
   gateway routes remain only in explicitly labelled local-demo mode.
 - Next: P2 cart quantities, ownership, revisions, and explicit minor units.
+
+## P2 — complete, 2026-10-17
+
+- Prerequisite: P1 `696f572`. Commit: this P2 commit.
+- Atomic set/remove with cart revisions, token-derived ownership, server menu
+  prices, frozen/sealed checks, and integer INR minor units.
+- Migration 005 adds minor columns/catalog and records the one-time conversion;
+  original rupee columns and earlier SQL remain unchanged.
+- Checks: missing-module red run; ten real-database cart/migration tests pass;
+  all workspace tests including gateway forged-owner/price regression pass;
+  `git diff --check` passes. Paneer ×2 = 68000 paise; a stale retry cannot add more.
+- No B-owned files or public contract changes. Next: P3 immutable checkout.

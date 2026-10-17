@@ -110,3 +110,18 @@ test('baseline rejects a drifted existing schema without recording history', asy
   assert.match(result.output, /schema.*mismatch/i);
   assert.equal((await f.pool.query('SELECT count(*)::int AS count FROM schema_migrations')).rows[0].count, 0);
 });
+
+test('legacy rupees convert to paise once while original columns remain intact', async t => {
+  const f = await fixture(t, true);
+  await f.pool.query(await readFile(new URL('../init.sql', import.meta.url), 'utf8'));
+  const sessionId = randomUUID();
+  const cartId = randomUUID();
+  await f.pool.query("INSERT INTO table_sessions(id,table_code,restaurant_name,table_name) VALUES($1,'SAGE-12','Juniper House','Table 12')", [sessionId]);
+  await f.pool.query('INSERT INTO carts(id,session_id) VALUES($1,$2)', [cartId, sessionId]);
+  await f.pool.query("INSERT INTO cart_items(id,cart_id,menu_item_id,owner_id,item_name,unit_price,emoji,quantity) VALUES($1,$2,'paneer',$3,'Paneer',340,'🍛',1)", [randomUUID(), cartId, randomUUID()]);
+  const result = await f.run({ BASELINE_BACKUP_CONFIRMED: 'yes' }, ['--baseline']);
+  assert.equal(result.code, 0, result.output);
+  assert.equal((await f.run()).code, 0);
+  assert.deepEqual((await f.pool.query('SELECT unit_price,unit_price_minor FROM cart_items')).rows, [{ unit_price: 340, unit_price_minor: 34000 }]);
+  assert.equal((await f.pool.query('SELECT count(*)::int AS count FROM money_unit_migrations')).rows[0].count, 1);
+});

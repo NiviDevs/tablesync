@@ -43,7 +43,7 @@ export function buildApp(options = {}) {
     app.get('/health', async () => ({ service: 'api-gateway', status: 'ok', runtime: 'services' }));
     registerProductRoutes(app, { auth: options.auth ?? authFromEnvironment(),
       internalSecret: options.internalSecret ?? process.env.INTERNAL_API_SECRET,
-      sessionUrl, ...options });
+      sessionUrl, orderUrl, ...options });
     return app;
   }
   const rooms = new Map(); app.register(websocket);
