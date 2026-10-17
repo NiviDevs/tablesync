@@ -1,16 +1,55 @@
 "use client";
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { db, type CartItem, type DemoSession } from '@/lib/demo';
-type Table = { id: string; display_name: string; table_code: string };
-type Ticket = { session: DemoSession; table: string; items: { name: string; quantity: number }[]; total: number };
+import { useEffect, useRef, useState } from 'react';
+import QRCode from 'qrcode';
+import { api, type OrderView, type TableView } from '@/lib/api';
+import { usePoll } from '@/lib/use-poll';
+import { KitchenTicket } from '@/components/kitchen-ticket';
+
 export default function Restaurant() {
-  const [tickets, setTickets] = useState<Ticket[]>([]); const [tables, setTables] = useState<Table[]>([]); const [error, setError] = useState(''); const [loading, setLoading] = useState(true); const [newTable, setNewTable] = useState(''); const [selectedTable, setSelectedTable] = useState<Table | null>(null);
-  const load = async () => { const { data: restaurant } = await db.from('demo_restaurants').select('id').eq('slug', 'juniper-house').single(); if (!restaurant) throw new Error('Restaurant setup is missing. Apply the demo migration first.'); const [{ data: tableRows }, { data: sessions }, { data: cart }, { data: menu }] = await Promise.all([db.from('demo_tables').select('id,display_name,table_code').eq('restaurant_id', restaurant.id).order('created_at'), db.from('demo_table_sessions').select('id,status,table_id,created_at').neq('status', 'OPEN').order('created_at', { ascending: false }), db.from('demo_cart_items').select('id,guest_id,menu_item_id,quantity,session_id'), db.from('demo_menu_items').select('id,name,price')]); const nextTables = (tableRows ?? []) as Table[]; const tableMap = new Map(nextTables.map(table => [table.id, table.display_name])); const menuMap = new Map((menu ?? []).map(item => [item.id, item])); setTables(nextTables); setTickets(((sessions ?? []) as DemoSession[]).map(session => { const items = (cart ?? []).filter((item: CartItem & { session_id: string }) => item.session_id === session.id).map(item => ({ name: menuMap.get(item.menu_item_id)?.name ?? 'Menu item', quantity: item.quantity, price: menuMap.get(item.menu_item_id)?.price ?? 0 })); return { session, table: tableMap.get(session.table_id) ?? 'Table', items, total: items.reduce((sum, item) => sum + item.price * item.quantity, 0) }; })); setLoading(false); };
-  useEffect(() => { load().catch(() => { setError('Could not load the restaurant dashboard.'); setLoading(false); }); const id = window.setInterval(() => load().catch(() => setError('Could not refresh live orders.')), 1800); return () => window.clearInterval(id); }, []);
-  const addTable = async () => { const name = newTable.trim(); if (!name) return; if (tables.length >= 3) return setError('The demo free plan allows three tables.'); const { data: restaurant } = await db.from('demo_restaurants').select('id').eq('slug', 'juniper-house').single(); const code = `JH-${crypto.randomUUID().slice(0, 6).toUpperCase()}`; const { error: insertError } = await db.from('demo_tables').insert({ restaurant_id: restaurant?.id, display_name: name, table_code: code }); if (insertError) setError('Could not add this table.'); else { setNewTable(''); await load(); } };
-  const removeTable = async (table: Table) => { const { error: deleteError } = await db.from('demo_tables').delete().eq('id', table.id); if (deleteError) setError('Tables with an order cannot be removed.'); else await load(); };
-  const advance = async (ticket: Ticket) => { const next = ticket.session.status === 'PLACED' ? 'PREPARING' : ticket.session.status === 'PREPARING' ? 'READY' : 'COMPLETE'; const { error: updateError } = await db.from('demo_table_sessions').update({ status: next }).eq('id', ticket.session.id); if (updateError) setError('Could not update this ticket.'); await load(); };
-  const qrUrl = selectedTable ? `${window.location.origin}/app?table=${selectedTable.table_code}` : '';
-  return <main className="restaurant-page"><nav className="restaurant-nav"><Link className="brand inverse" href="/">table<i>sync</i></Link><span className="restaurant-status"><i /> Presentation dashboard</span></nav><section className="restaurant-intro"><p className="kicker light">Juniper House · Restaurant portal</p><h1>Tables and orders,<br /><em>in one place.</em></h1><p>Open a QR below, let guests pay their own share, then watch the completed order arrive here.</p></section><section className="restaurant-board"><div className="board-heading"><div><p className="kicker">Your tables</p><h2>{loading ? 'Loading…' : `${tables.length} active table${tables.length === 1 ? '' : 's'}`}</h2></div><div className="table-create"><input value={newTable} onChange={event => setNewTable(event.target.value)} placeholder="e.g. Patio 4" /><button onClick={addTable}>Add table</button></div></div>{error && <p className="inline-error">{error}</p>}<div className="table-list">{tables.map(table => <article key={table.id}><div><strong>{table.display_name}</strong><small>{table.table_code}</small></div><div className="table-actions"><button onClick={() => setSelectedTable(table)}>Show QR</button><button className="remove-table" onClick={() => removeTable(table)}>Remove</button></div></article>)}</div><div className="board-heading order-heading"><div><p className="kicker">Live table orders</p><h2>{loading ? 'Loading orders…' : `${tickets.length} ticket${tickets.length === 1 ? '' : 's'}`}</h2></div></div><div className="order-list">{tickets.map(ticket => <article className="restaurant-order" key={ticket.session.id}><div className="order-meta"><span>{ticket.table}</span><small>{ticket.session.status}</small></div><div className="order-items">{ticket.items.map((item, i) => <p key={`${item.name}-${i}`}><b>{item.quantity}×</b> {item.name}</p>)}</div><div className="order-footer"><button className="ready-pill" onClick={() => advance(ticket)}>{ticket.session.status === 'PLACED' ? 'Start preparing' : ticket.session.status === 'PREPARING' ? 'Mark ready' : 'Complete'}</button><strong>₹{ticket.total}</strong></div></article>)}{!loading && !tickets.length && <div className="empty-orders"><span>○</span><h3>The pass is clear.</h3><p>Paid QR-table orders appear here automatically.</p></div>}</div></section>{selectedTable && <div className="checkout-backdrop"><section className="qr-sheet"><button className="close-sheet" onClick={() => setSelectedTable(null)}>×</button><p className="kicker">{selectedTable.display_name}</p><h2>Guest table QR</h2><img alt={`QR code for ${selectedTable.display_name}`} src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrUrl)}`} /><p>Guests scan, enter their name, add dishes, and pay their own share.</p><a href={qrUrl} target="_blank" rel="noreferrer">Open table link</a></section></div>}</main>;
+  const [tables, setTables] = useState<TableView[]>([]);
+  const [orders, setOrders] = useState<OrderView[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const locked = useRef(false);
+  const [selected, setSelected] = useState<TableView | null>(null);
+  const [qr, setQr] = useState('');
+  const [kitchenOnly, setKitchenOnly] = useState(false);
+  useEffect(() => { setKitchenOnly(new URLSearchParams(location.search).get('view') === 'kitchen'); }, []);
+  const poll = usePoll(async signal => {
+    try {
+      const [tableResult, orderResult] = await Promise.all([
+        api<{ tables: TableView[] }>('/v1/restaurant/tables', { signal }),
+        api<{ orders: OrderView[] }>('/v1/restaurant/orders', { signal }),
+      ]);
+      if (!locked.current) { setTables(tableResult.tables); setOrders(orderResult.orders); }
+    } finally { if (!signal.aborted) setLoading(false); }
+  }, 'restaurant');
+  useEffect(() => {
+    let active = true;
+    setQr('');
+    if (selected) QRCode.toDataURL(`${location.origin}/app?table=${encodeURIComponent(selected.code)}`, { width: 260, margin: 2 })
+      .then(value => { if (active) setQr(value); }).catch(() => { if (active) setError('Could not generate QR. Use the table link.'); });
+    return () => { active = false; };
+  }, [selected]);
+  async function mutate(path: string, method: string, body?: unknown) {
+    if (locked.current) return;
+    locked.current = true; setBusy(true); setError('');
+    try { await api(path, { method, body }); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not update'); }
+    finally { locked.current = false; setBusy(false); poll.refresh(); }
+  }
+  const active = orders.filter(order => order.status !== 'SERVED');
+  return <main className="restaurant-page"><nav className="restaurant-nav"><Link className="brand inverse" href="/">table<i>sync</i></Link><div className="table-actions"><a href="/restaurant">Tables</a><a href="/restaurant?view=kitchen">Kitchen</a><Link href="/restaurant/sign-in">Staff sign-in</Link></div></nav>
+    <section className="restaurant-intro"><p className="kicker light">Juniper House · {kitchenOnly ? 'Kitchen' : 'Restaurant portal'}</p><h1>{kitchenOnly ? 'Orders to prepare.' : 'Tables and orders, in one place.'}</h1><p>Guests share a table order. Payments are simulated; no money is collected.</p></section>
+    <section className="restaurant-board">{(error || poll.error) && <p role="alert" className="inline-error">{error || poll.error} <button onClick={poll.refresh}>Retry refresh</button></p>}{poll.stale && <p role="status">Updates are stale. Showing the last received data.</p>}
+      {!kitchenOnly && <><div className="board-heading"><div><p className="kicker">Your tables</p><h2>{loading ? 'Loading…' : `${tables.filter(table => table.session).length} occupied / ${tables.length} tables`}</h2></div></div>
+      <div className="table-list">{tables.map(table => <article key={table.code}><div><strong>{table.name}</strong><small>{table.code} · {table.session?.status ?? 'Available'}</small>{table.session && <><p>{table.session.participants.length} guests · seated {Math.max(0, Math.floor((Date.now() - Date.parse(table.session.openedAt)) / 60000))} min</p><p>{orders.filter(order => order.sessionId === table.session?.id).map(order => order.status).join(', ') || 'Choosing dishes'}</p></>}</div><div className="table-actions"><button onClick={() => setSelected(table)}>Show QR</button>{table.session && <button disabled={busy || poll.stale} onClick={() => mutate(`/v1/sessions/${table.session!.id}/close`, 'POST')}>{table.session.status === 'CLOSING' ? 'Retry close' : 'Close seating'}</button>}</div></article>)}</div></>}
+      <div className="board-heading order-heading"><div><p className="kicker">Kitchen queue</p><h2>{loading ? 'Loading orders…' : `${active.length} active tickets`}</h2></div></div>
+      <div className="order-list">{active.map(order => <KitchenTicket key={order.id} order={order} busy={busy || poll.stale} advance={status => mutate(`/v1/orders/${order.id}/status`, 'PATCH', { status })} />)}{!loading && !active.length && !poll.error && <div className="empty-orders"><h3>The pass is clear.</h3><p>Confirmed table orders appear here automatically.</p></div>}</div>
+      {!kitchenOnly && orders.some(order => order.status === 'SERVED') && <details><summary>Recently served orders (within latest 100 orders)</summary><div className="order-list">{orders.filter(order => order.status === 'SERVED').map(order => <KitchenTicket key={order.id} order={order} busy={false} advance={() => {}} />)}</div></details>}
+    </section>
+    {selected && <div className="checkout-backdrop"><section className="qr-sheet" role="dialog" aria-modal="true" aria-label="Guest table QR"><button className="close-sheet" aria-label="Close QR" onClick={() => setSelected(null)}>×</button><p className="kicker">{selected.name}</p><h2>Guest table QR</h2>{qr && <img alt={`QR code for ${selected.name}`} src={qr} />}<p>Scan, enter your name, and add dishes to the shared table order.</p><a href={`/app?table=${encodeURIComponent(selected.code)}`} target="_blank" rel="noreferrer">Open table link</a></section></div>}
+  </main>;
 }

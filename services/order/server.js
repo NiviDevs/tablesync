@@ -6,6 +6,7 @@ import { createCartStore } from './src/cart.js';
 import { createCheckoutStore } from './src/checkout.js';
 import { createOutbox } from './src/outbox.js';
 import { processPaymentDelivery } from './src/consumer.js';
+import { createKitchen } from './src/kitchen.js';
 export { isCommittedPaymentEvent } from './src/checkout.js';
 
 const database = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://tablesync:tablesync@localhost:5432/tablesync' });
@@ -34,6 +35,7 @@ const checkoutStore = createCheckoutStore({ pool: database, sessionClient: table
   persistSaga: body => privateJson(paymentUrl, '/v1/payment-sagas', body),
 } });
 const outbox = createOutbox({ pool: database, getChannel: () => broker });
+const kitchen = createKitchen({ pool: database, orderView: checkoutStore.orderView });
 
 export function buildApp() {
   const app = Fastify({ logger: true, bodyLimit: 16 * 1024 });
@@ -58,6 +60,11 @@ export function buildApp() {
   app.post('/v1/checkouts', request => checkoutStore.createCheckout(request.body ?? {}));
   app.get('/v1/checkouts/:id', request => checkoutStore.getCheckout(request.params.id));
   app.post('/v1/checkouts/:id/retry', request => checkoutStore.retryCheckout({ ...request.body, id: request.params.id }));
+  app.get('/v1/restaurant/orders', async request => ({ orders: await kitchen.listOrders(request.headers['x-restaurant-id']) }));
+  app.patch('/v1/orders/:id/status', request => kitchen.advanceOrder({ orderId: request.params.id,
+    restaurantId: request.headers['x-restaurant-id'], status: request.body?.status }));
+  app.post('/v1/sessions/:id/seal', request => kitchen.sealSession(request.params.id));
+  app.post('/v1/sessions/:id/unseal', request => kitchen.unsealSession(request.params.id));
   return app;
 }
 async function connectBroker() {

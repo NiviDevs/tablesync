@@ -95,7 +95,7 @@ The original checkout remains on `main`; B-owned files are untouched.
 
 ## P3 — complete, 2026-10-17
 
-- Prerequisite: P2 `ac2294f`. Commit: this P3 commit.
+- Prerequisite: P2 `ac2294f`. Commit: `9177a38`.
 - Added immutable checkout attempts, Payment payload idempotency, stored event
   envelopes/outboxes, v2 snapshot projection, reconciliation, and bounded bad-event
   handling. Original Saga success/failure/timeout tests remain intact.
@@ -113,3 +113,28 @@ The original checkout remains on `main`; B-owned files are untouched.
 - Integration request: Order now needs PAYMENT_SERVICE_URL. Apply 006/007 before
   new images; B must preserve the v2 durable queue/dead-letter setup and avoid
   replacing persisted outbox IDs. Next: P4 kitchen/closure and browser wiring.
+
+## P4 — paused by user for session handoff, 2026-10-17
+
+- Backend kitchen/closure, migration 008, routes, and three passing lifecycle
+  integration tests are uncommitted. Web QR dependency installation succeeded.
+- Browser adapter/proxy and guest/restaurant migration have not started.
+- Current running Compose images/schema remain at P3. Preserve all local work.
+- Resume using [the detailed handoff](A-HANDOFF.md). P4 is not complete; P5 pending.
+
+## P4 — complete, 2026-10-17
+
+- Preserved and finished the handoff's kitchen/closure backend and migration 008.
+- Guest and restaurant pages now use the allowlisted same-origin service proxy;
+  no active product import uses the Supabase demo helper. Staff identity helpers
+  remain, with a clear configuration message when sign-in is unavailable.
+- Added own-line quantity/removal controls, table payment simulation, durable
+  browser retry identity, two-second non-overlapping polling, expired/closed/stale
+  states, kitchen transitions, table occupancy and locally generated QR codes.
+- Four real PostgreSQL lifecycle tests pass, including writes that read OPEN
+  before closure seals the cart. Typecheck and production build pass. The build
+  needs execution outside this sandbox due to empty TypeScript child output.
+- Migration 008 applied to the existing synthetic Compose database. P5 will
+  verify the complete browser journey and access boundary on isolated data.
+- Limitations: live Supabase sign-in, phone QR access, menu editing, business
+  analytics and B's Ops/cluster integration are not verified by P4.

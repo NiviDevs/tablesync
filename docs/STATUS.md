@@ -120,3 +120,16 @@ Keep evidence small and reproducible. Do not commit credentials, customer data, 
   rehearsal, browser journey, live Supabase staff setup, or cluster claim yet.
 - Per user direction, live staff account provisioning does not block the educational
   demo implementation; local generated-key auth tests remain the verification.
+
+## P4 browser and lifecycle integration — 2026-10-17
+
+- Work package: P4, Role A, `feat/product-integration`.
+- Guest and restaurant business data now use the service API through an
+  allowlisted same-origin Next.js proxy. Supabase remains staff identity only.
+- Four PostgreSQL lifecycle tests, typecheck, production build and diff checks
+  pass. Closure rejects cart/checkout requests even after an earlier OPEN read.
+- UI supports shared cart ownership, simulated table payment/recovery, kitchen
+  progression, seating closure, stale/error states and local QR generation.
+- Migration 008 applied additively to the synthetic Compose database.
+- Full browser/access verification is P5. Live identity, phones, menu editing,
+  business analytics and infrastructure integration remain outside this evidence.

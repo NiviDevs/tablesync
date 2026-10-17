@@ -102,5 +102,18 @@ export function registerProductRoutes(app, { auth, internalSecret, sessionUrl, o
     const { replayed, ...checkout } = await callOrder(`/v1/checkouts/${encodeURIComponent(request.params.id)}/retry`, { method: 'POST', body: request.body, identity });
     return reply.code(replayed ? 200 : 202).send(checkout);
   });
+  app.get('/v1/restaurant/orders', async request => {
+    const identity = await auth.verifyStaff(bearer(request));
+    return callOrder('/v1/restaurant/orders', { identity });
+  });
+  app.patch('/v1/orders/:id/status', async request => {
+    const identity = await auth.verifyStaff(bearer(request));
+    if (!request.body || Object.keys(request.body).some(k => k !== 'status')) fail(400, 'INVALID_ORDER_STATUS', 'Only status is accepted');
+    return callOrder(`/v1/orders/${encodeURIComponent(request.params.id)}/status`, { method: 'PATCH', body: request.body, identity });
+  });
+  app.post('/v1/sessions/:id/close', async request => {
+    const identity = await auth.verifyStaff(bearer(request));
+    return callSession(`/v1/sessions/${encodeURIComponent(request.params.id)}/close`, { method: 'POST', identity });
+  });
   return { callSession, callOrder, requireGuest, auth };
 }

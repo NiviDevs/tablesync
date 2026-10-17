@@ -34,6 +34,7 @@ services:
     build: ./services/session
     environment:
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
+      ORDER_SERVICE_URL: http://order:8082
       DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672

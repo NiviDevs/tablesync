@@ -14,8 +14,16 @@ async function publish(type, data) {
   if (broker) broker.publish('tablesync.events', type, Buffer.from(JSON.stringify({ id: randomUUID(), version: 1,
     occurredAt: new Date().toISOString(), correlationId: randomUUID(), type, data })), { persistent: true });
 }
+const orderClient = { async sealSession(id) {
+  const response = await fetch(new URL(`/v1/sessions/${id}/seal`, process.env.ORDER_SERVICE_URL ?? 'http://localhost:8082'), {
+    method: 'POST', headers: { authorization: `Bearer ${process.env.INTERNAL_API_SECRET}` }, signal: AbortSignal.timeout(4000) });
+  if (!response.ok) {
+    const data = await response.json();
+    throw Object.assign(new Error(data.error?.message ?? 'Order sealing failed'), { statusCode: response.status, code: data.error?.code });
+  }
+} };
 
-export function buildApp({ pool = database, registry = createRegistry({ pool }), internalSecret = process.env.INTERNAL_API_SECRET } = {}) {
+export function buildApp({ pool = database, registry = createRegistry({ pool, orderClient }), internalSecret = process.env.INTERNAL_API_SECRET } = {}) {
   const app = Fastify({ logger: true, bodyLimit: 16 * 1024 });
   app.addHook('onRequest', async (request, reply) => {
     if (request.url.startsWith('/v1/') && (!internalSecret || request.headers.authorization !== `Bearer ${internalSecret}`)) {
@@ -32,6 +40,7 @@ export function buildApp({ pool = database, registry = createRegistry({ pool }),
   app.get('/v1/tables/:code', request => registry.getTable(request.params.code));
   app.get('/v1/sessions/id/:id', request => registry.getSession(request.params.id));
   app.get('/v1/restaurant/tables', async request => ({ tables: await registry.listTables(request.headers['x-restaurant-id']) }));
+  app.post('/v1/sessions/:id/close', request => registry.closeSession({ sessionId: request.params.id, restaurantId: request.headers['x-restaurant-id'] }));
   app.post('/v1/table-sessions/join', async (request, reply) => {
     const { tableCode, name, joinKey } = request.body ?? {};
     const result = await registry.joinTable({ code: tableCode, name, joinKey });

@@ -8,7 +8,7 @@ export function canonicalCode(value) {
   return code;
 }
 
-export function createRegistry({ pool }) {
+export function createRegistry({ pool, orderClient }) {
   async function present(db, table, session) {
     const participants = session ? (await db.query(
       'SELECT id,display_name AS name FROM participants WHERE session_id=$1 ORDER BY joined_at,id', [session.id])).rows : [];
@@ -22,12 +22,12 @@ export function createRegistry({ pool }) {
     return present(db, table, session);
   }
   async function getTable(code) { return tableView(pool, canonicalCode(code)); }
-  async function getSession(id) {
+  async function getSession(id, db = pool) {
     if (!uuid.test(id)) fail(400, 'INVALID_SESSION_ID', 'A valid session ID is required');
-    const session = (await pool.query('SELECT * FROM table_sessions WHERE id=$1', [id])).rows[0];
+    const session = (await db.query('SELECT * FROM table_sessions WHERE id=$1', [id])).rows[0];
     if (!session) fail(404, 'SESSION_NOT_FOUND', 'Session not found');
-    const table = (await pool.query('SELECT * FROM physical_tables WHERE code=$1', [session.table_code])).rows[0];
-    return present(pool, table, session);
+    const table = (await db.query('SELECT * FROM physical_tables WHERE code=$1', [session.table_code])).rows[0];
+    return present(db, table, session);
   }
   async function joinTable({ code: inputCode, name: inputName, joinKey }) {
     const code = canonicalCode(inputCode);
@@ -70,5 +70,33 @@ export function createRegistry({ pool }) {
     const tables = await pool.query('SELECT code FROM physical_tables WHERE restaurant_id=$1 ORDER BY code', [restaurantId]);
     return Promise.all(tables.rows.map(t => tableView(pool, t.code)));
   }
-  return { getTable, joinTable, getSession, listTables };
+  async function closeSession({ sessionId, restaurantId }) {
+    const client = await pool.connect();
+    try {
+      await client.query('SELECT pg_advisory_lock(hashtext($1))', [`close:${sessionId}`]);
+      const table = await getSession(sessionId, client);
+      if (table.restaurantId !== restaurantId) fail(403, 'RESTAURANT_SCOPE_MISMATCH', 'Seating belongs to another restaurant');
+      if (table.session.status === 'CLOSED') return table;
+      await client.query('BEGIN');
+      try {
+        await client.query('SELECT code FROM physical_tables WHERE code=$1 FOR UPDATE', [table.code]);
+        await client.query("UPDATE table_sessions SET status='CLOSING' WHERE id=$1 AND status='OPEN'", [sessionId]);
+        await client.query('COMMIT');
+      } catch (error) { await client.query('ROLLBACK'); throw error; }
+      try { await orderClient.sealSession(sessionId); }
+      catch (error) {
+        if (error.statusCode === 409) {
+          await client.query("UPDATE table_sessions SET status='OPEN' WHERE id=$1 AND status='CLOSING'", [sessionId]);
+          throw error;
+        }
+        fail(503, 'CLOSE_PENDING', 'Closure outcome is uncertain; retry to finish closing');
+      }
+      await client.query("UPDATE table_sessions SET status='CLOSED',closed_at=COALESCE(closed_at,now()) WHERE id=$1 AND status='CLOSING'", [sessionId]);
+      return getSession(sessionId, client);
+    } finally {
+      try { await client.query('SELECT pg_advisory_unlock(hashtext($1))', [`close:${sessionId}`]); }
+      finally { client.release(); }
+    }
+  }
+  return { getTable, joinTable, getSession, listTables, closeSession };
 }

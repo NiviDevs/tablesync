@@ -20,3 +20,9 @@
   .site-shell{height:auto;min-height:100svh;overflow:visible}
   .landing-hero{flex:none;padding:55px 0}
 }
+
+/* Service-backed shared cart controls. */
+.cart-line { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #ddd5c8; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+.restaurant-nav a:not(.brand) { color: inherit; }
+@media (max-width: 600px) { .cart-line { align-items: flex-start; flex-direction: column; } }
