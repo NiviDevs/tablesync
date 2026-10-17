@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -55,7 +55,7 @@ test('real migrations run twice without changing persisted rows', async t => {
   assert.equal((await f.run()).code, 0);
   assert.deepEqual((await f.pool.query('SELECT * FROM table_sessions')).rows, before);
   assert.deepEqual((await f.pool.query('SELECT filename FROM schema_migrations ORDER BY filename')).rows.map(r => r.filename),
-    ['001-initial-schema.sql', '002-payment.sql', '003-consolidated-orders.sql']);
+    (await readdir(realMigrations)).filter(name => /^\d{3}-.*\.sql$/.test(name)).sort());
 });
 
 test('concurrent runners apply a non-idempotent migration once', async t => {
@@ -90,14 +90,14 @@ test('existing service schema requires explicit backup acknowledgement and valid
   const initial = await readFile(new URL('../init.sql', import.meta.url), 'utf8');
   await f.pool.query(initial);
   await f.pool.query("INSERT INTO table_sessions(id,table_code,restaurant_name,table_name) VALUES(gen_random_uuid(),'SAGE-12','Juniper House','Table 12')");
-  const before = (await f.pool.query('SELECT * FROM table_sessions')).rows;
+  const before = (await f.pool.query('SELECT id,table_code,restaurant_name,table_name,created_at FROM table_sessions')).rows;
   const denied = await f.run();
   assert.notEqual(denied.code, 0);
   assert.match(denied.output, /baseline/i);
   assert.notEqual((await f.run({}, ['--baseline'])).code, 0);
   const baseline = await f.run({ BASELINE_BACKUP_CONFIRMED: 'yes' }, ['--baseline']);
   assert.equal(baseline.code, 0, baseline.output);
-  assert.deepEqual((await f.pool.query('SELECT * FROM table_sessions')).rows, before);
+  assert.deepEqual((await f.pool.query('SELECT id,table_code,restaurant_name,table_name,created_at FROM table_sessions')).rows, before);
   assert.equal((await f.run()).code, 0);
 });
 

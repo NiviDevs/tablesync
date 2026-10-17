@@ -16,6 +16,7 @@ belong in the new path.
 - Errors are `ApiError`: `{error:{code,message},requestId}`. Malformed input is
   400, missing/invalid credentials 401, wrong scope/membership 403, absent entity
   404, stale state/key conflict 409, rate limit 429, unavailable dependency 503.
+  A body exceeding 16 KiB returns 413.
   The browser proxy preserves the status and error code.
 - Public mutation bodies are bounded to 16 KiB. Join is limited to 30/min/IP;
   mutations to 120/min/credential. Initial singleton gateway limits are local
@@ -103,6 +104,13 @@ events for the new path. F1 does not change v1 producers or their rupee units;
 [EVENTS.md](EVENTS.md) and event tests change with the P3 producers.
 
 ## Checkpoint integration
+
+P1 implements table lookup, joining, table listing, and the credential boundary.
+In service runtime the unsafe legacy gateway table/cart/checkout routes are no
+longer registered; product callers move to the frozen routes above in P2–P4.
+The explicitly labelled local-demo runtime remains only as the historical demo
+and is rejected by the service smoke. Private Session lookup now returns
+TableView; the legacy internal Order client adapts that shape until P3.
 
 B must merge the published FOUNDATION CHECKPOINT before dependent work. C1/C2
 may use these stable ports, Node 22.23.3/npm 10.9.9, and `npm run db:migrate` with

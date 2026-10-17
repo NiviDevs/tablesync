@@ -36,7 +36,7 @@ The original checkout remains on `main`; B-owned files are untouched.
 
 - Prerequisite: F0 `97a8733`.
 - Commit: this F1 commit (`feat: define service contracts and repeatable migrations`),
-  published as FOUNDATION CHECKPOINT after commit creation.
+  FOUNDATION CHECKPOINT: `66ea50c32401a8c6fd8a639d24d43b58d359463d`.
 - Added exact shared HTTP types and [API contract](../API.md). Public routes are
   specified, not yet implemented; P1–P4 supply them. Existing v1 events/units are
   unchanged; v2 types/producers/event documentation land together in P3.
@@ -61,3 +61,22 @@ The original checkout remains on `main`; B-owned files are untouched.
   Compose changes to A. Operator access/registration depends on P1 auth.
 - Blockers: none for P1. B's contract/port/health review remains a coordination
   action; no B infrastructure implementation or measured telemetry is claimed.
+
+## P1 — complete for local demo, 2026-10-17
+
+- Prerequisite: foundation `66ea50c`. Commit: this P1 commit.
+- Added 004 registry/lifecycle migration, conflict-safe joining, server-generated
+  participant IDs, scoped guest JWTs, staff membership/operator checks, private
+  service bearer checks, and bounded gateway requests.
+- Red: registry/auth suites failed for missing modules. Green: auth/private HTTP
+  tests and nine database checks passed; ten first joins share one seating and
+  repeated/unknown reads preserve counts. Existing workspace tests also pass.
+- Compose rebuild/health and side-effect-free registry smoke passed after 004.
+- Runtime config uses ignored local random secrets. Supabase live sign-in and
+  staff/operator account provisioning remain unverified; per user direction,
+  local signing-key tests suffice to continue educational demo development.
+- Integration request: B must pass INTERNAL_API_SECRET to all private services,
+  GUEST_TOKEN_SECRET to gateway, and apply 004 before requests. Health/ports are
+  unchanged. New service runtime uses the frozen API; legacy unsafe public
+  gateway routes remain only in explicitly labelled local-demo mode.
+- Next: P2 cart quantities, ownership, revisions, and explicit minor units.

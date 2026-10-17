@@ -42,8 +42,13 @@ async function persistSaga({ sessionId, idempotencyKey, payments }) {
   return { replayed: false, saga: await sagaView(saga.sagaId), events: saga.events };
 }
 
-export function buildApp() {
+export function buildApp({ internalSecret = process.env.INTERNAL_API_SECRET } = {}) {
   const app = Fastify({ logger: true });
+  app.addHook('onRequest', async (request, reply) => {
+    if (request.url.startsWith('/v1/') && (!internalSecret || request.headers.authorization !== `Bearer ${internalSecret}`)) {
+      return reply.code(internalSecret ? 401 : 503).send({ error: { code: 'INTERNAL_AUTH_REQUIRED', message: 'Private service credential required' }, requestId: request.id });
+    }
+  });
   app.get('/health', async () => { await database.query('SELECT 1'); return { service: 'payment', status: 'ok', provider: 'mock', simulated: true, rabbitmq: Boolean(broker) }; });
   app.get('/v1/payment-sagas/:id', async (request, reply) => { const saga = await sagaView(request.params.id); return saga ?? reply.code(404).send({ error: 'payment saga not found' }); });
   app.post('/v1/payment-sagas', async (request, reply) => {

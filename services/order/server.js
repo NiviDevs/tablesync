@@ -23,9 +23,10 @@ async function publish(type, data, correlationId) {
   await broker.waitForConfirms();
 }
 async function sessionFor(sessionId) {
-  const response = await fetch(`${sessionUrl}/v1/sessions/id/${sessionId}`);
+  const response = await fetch(`${sessionUrl}/v1/sessions/id/${sessionId}`, { headers: { authorization: `Bearer ${process.env.INTERNAL_API_SECRET}` }, signal: AbortSignal.timeout(4000) });
   if (!response.ok) throw new Error(`session ${sessionId} is unavailable`);
-  return response.json();
+  const table = await response.json();
+  return { id: table.session.id, tableCode: table.code, restaurant: 'Juniper House', tableName: table.name, participants: table.session.participants };
 }
 async function orderView(orderId) {
   const order = await database.query('SELECT id, payment_saga_id AS "paymentSagaId", session_id AS "sessionId", restaurant_name AS "restaurantName", table_name AS "tableName", status, total_amount AS "totalAmount", created_at AS "createdAt" FROM consolidated_orders WHERE id=$1', [orderId]);
@@ -77,6 +78,12 @@ async function handlePaymentEvent(message) {
 
 export function buildApp() {
   const app = Fastify({ logger: true });
+  app.addHook('onRequest', async (request, reply) => {
+    const secret = process.env.INTERNAL_API_SECRET;
+    if (request.url.startsWith('/v1/') && (!secret || request.headers.authorization !== `Bearer ${secret}`)) {
+      return reply.code(secret ? 401 : 503).send({ error: { code: 'INTERNAL_AUTH_REQUIRED', message: 'Private service credential required' }, requestId: request.id });
+    }
+  });
   app.get('/health', async () => { await database.query('SELECT 1'); return { service: 'order', status: 'ok', rabbitmq: Boolean(broker) }; });
   app.get('/v1/carts/:sessionId', async request => {
     const cart = await cartFor(request.params.sessionId);
@@ -91,7 +98,7 @@ export function buildApp() {
     const cart = await cartFor(request.params.sessionId);
     await database.query('INSERT INTO cart_items (id,cart_id,menu_item_id,owner_id,item_name,unit_price,emoji,quantity) VALUES ($1,$2,$3,$4,$5,$6,$7,1) ON CONFLICT (cart_id,menu_item_id,owner_id) DO UPDATE SET quantity=cart_items.quantity+1', [randomUUID(), cart.id, item.id, participantId, item.name, item.price, item.emoji]);
     await publish('cart.item_added.v1', { sessionId: request.params.sessionId, item: { menuItemId, ownerId: participantId } });
-    return app.inject({ method: 'GET', url: `/v1/carts/${request.params.sessionId}` }).then(response => response.json());
+    return app.inject({ method: 'GET', url: `/v1/carts/${request.params.sessionId}`, headers: { authorization: `Bearer ${process.env.INTERNAL_API_SECRET}` } }).then(response => response.json());
   });
   app.get('/v1/orders/:id', async (request, reply) => (await orderView(request.params.id)) ?? reply.code(404).send({ error: 'order not found' }));
   app.get('/v1/orders', async request => {

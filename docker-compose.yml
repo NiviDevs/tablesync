@@ -33,6 +33,7 @@ services:
   session:
     build: ./services/session
     environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
       DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
@@ -48,6 +49,7 @@ services:
   order:
     build: ./services/order
     environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
       DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
       SESSION_SERVICE_URL: http://session:8081
@@ -63,6 +65,7 @@ services:
   payment:
     build: ./services/payment
     environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
       DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
@@ -76,6 +79,12 @@ services:
   api-gateway:
     build: ./services/api-gateway
     environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
+      GUEST_TOKEN_SECRET: ${GUEST_TOKEN_SECRET:?Set a dedicated GUEST_TOKEN_SECRET}
+      STAFF_JWT_ISSUER: ${STAFF_JWT_ISSUER:-}
+      STAFF_JWT_AUDIENCE: ${STAFF_JWT_AUDIENCE:-authenticated}
+      STAFF_JWKS_URL: ${STAFF_JWKS_URL:-}
+      STAFF_ASSIGNMENTS_JSON: ${STAFF_ASSIGNMENTS_JSON:-}
       TABLESYNC_RUNTIME: services
       SESSION_SERVICE_URL: http://session:8081
       ORDER_SERVICE_URL: http://order:8082

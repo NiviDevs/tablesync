@@ -2,6 +2,8 @@ import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import { authFromEnvironment } from './src/auth.js';
+import { registerProductRoutes } from './src/routes.js';
 
 const runtime = process.env.TABLESYNC_RUNTIME ?? 'local-demo';
 const sessionUrl = process.env.SESSION_SERVICE_URL ?? 'http://localhost:8081';
@@ -34,8 +36,17 @@ async function ordersFor(code) {
   return requestJson(`${orderUrl}/v1/orders?sessionId=${encodeURIComponent(session.id)}`);
 }
 
-export function buildApp() {
-  const app = Fastify({ logger: true }); const rooms = new Map(); app.register(websocket);
+export function buildApp(options = {}) {
+  const selectedRuntime = options.runtime ?? runtime;
+  const app = Fastify({ logger: { redact: ['req.headers.authorization'] }, bodyLimit: 16 * 1024 });
+  if (selectedRuntime === 'services') {
+    app.get('/health', async () => ({ service: 'api-gateway', status: 'ok', runtime: 'services' }));
+    registerProductRoutes(app, { auth: options.auth ?? authFromEnvironment(),
+      internalSecret: options.internalSecret ?? process.env.INTERNAL_API_SECRET,
+      sessionUrl, ...options });
+    return app;
+  }
+  const rooms = new Map(); app.register(websocket);
   app.addHook('onRequest', async (_request, reply) => { reply.header('access-control-allow-origin', process.env.WEB_ORIGIN ?? 'http://localhost:3000'); reply.header('access-control-allow-methods', 'GET,POST,OPTIONS'); reply.header('access-control-allow-headers', 'content-type'); });
   app.options('*', async (_request, reply) => reply.code(204).send());
   const broadcast = async (code, type) => { const message = JSON.stringify({ type, session: await getSession(code) }); for (const socket of rooms.get(code.toUpperCase()) ?? []) if (socket.readyState === socket.OPEN) socket.send(message); };

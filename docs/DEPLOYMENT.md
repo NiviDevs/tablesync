@@ -24,9 +24,15 @@ configuration is introduced.
 The current browser still uses the separate Supabase demo. Starting the backend
 does not connect that UI to the services; see [PROJECT_STATE.md](PROJECT_STATE.md).
 
-## Legacy service smoke
+## Service smoke
 
-Docker Engine and Docker Compose are required. Use a separate Compose project
+Docker Engine and Docker Compose are required. Set separate random server-only
+`INTERNAL_API_SECRET` and `GUEST_TOKEN_SECRET` values (at least 32 bytes) in the
+ignored root `.env`; never reuse a Supabase key. Staff issuer/JWKS and subject
+assignments are optional for guest-only local development; staff routes deny
+access until configured. Local auth tests use generated signing keys.
+
+Use a separate Compose project
 for an isolated development baseline. Confirm ports 5432, 6379, 5672, 15672, and
 8080 are free. The existing Compose credentials are local development examples;
 keep the stack private.
@@ -37,11 +43,11 @@ GATEWAY_URL=http://localhost:8080 npm run smoke:services
 docker compose -p tablesync-role-a-f0 stop
 ```
 
-The smoke checks gateway health, requires `runtime: services`, and reads the
-legacy SAGE-12 session/cart twice to confirm a stable UUID. **This legacy GET
-may create the session/cart**; it does not submit payments or erase data. P1
-will replace it with the side-effect-free table registry endpoint. This smoke
-does not yet establish checkout correctness or persistence across restarts.
+The smoke checks gateway health, requires `runtime: services`, and reads
+`/v1/tables/SAGE-12` twice without creating a seating or cart. It does not yet
+establish checkout correctness or persistence across restarts. Before starting
+new P1 services against an existing F0 volume, run the F1 migration procedure
+below to apply 004. Empty databases also need the runner after PostgreSQL starts.
 `stop` preserves volumes and containers. Do not delete database volumes to reset
 the application. Existing non-disposable volumes require a backup and schema
 inspection before the F1 migration baseline.
