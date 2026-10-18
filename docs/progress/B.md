@@ -55,3 +55,73 @@ Original main and A's worktree remain untouched.
 - A must integrate this focused commit before rebuilding its Compose services.
   A's running containers, volumes and local environment remain untouched.
 - Cluster files and runtime acceptance remain separate C2 work on B's branch.
+
+## C2 — deployed and runtime verified, 2026-10-18
+
+- Commit: this C2 commit (`feat: deploy the service stack to local Kubernetes`).
+- Profile/context/namespace `tablesync`, Minikube v1.37.0, Kubernetes/kubectl
+  v1.34.1; Docker driver, 4 CPU quota and 6144 MiB requested. Published SHA-256
+  checksums verified for downloaded Minikube/kubectl binaries.
+- Bootstrap exits 0: all eight workload pods Ready, revision-named migration
+  Job completes, server dry-run passes, private ClusterIP services, PVCs bound.
+  Images deployed from `fdd1b426ce24`; all five image builds pass.
+- Real application flow commits order `04865ecb-472b-449b-be60-26529ebf1864`;
+  actual Order restart preserves the same ID. Migration rerun says already
+  current and preserves the one order. Evidence is in `infra/k8s/evidence`.
+- Real PostgreSQL outage initially exposed unhandled idle-pool errors, causing
+  application restarts. Correction `e745250` is integrated by A as `c877793`.
+  Rerun passes: Session/Order/Payment/gateway stay live (200), readiness becomes
+  503, then recovers; all corrected application restart counts remain zero.
+- A Redis listener `5555ae2` is cherry-picked as `fdd1b42`; real Redis outage is
+  not rehearsed. No more broad failure runs or suites after A reports the user
+  deadline. Remaining work prioritizes functional monitoring/Ops/scaling demo.
+- `kubectl top pods` reports real per-workload data; sample consumption is
+  Session 45m/28Mi, gateway 41m/28Mi, Order 33m/24Mi, Payment 33m/23Mi,
+  web 56m/46Mi, PostgreSQL 6m/29Mi, Redis 8m/9Mi, RabbitMQ 148m/131Mi.
+- Bootstrap now reuses a healthy profile; repeated `minikube start` restarted
+  node containers on this host. A bootstrap run also failed after its file was
+  edited during execution; stable-file rerun passed. No volume/data deletion.
+- Quick start: `PATH=/tmp/tablesync-bin:$PATH IMAGE_TAG=fdd1b426ce24 bash
+  infra/k8s/bootstrap.sh`; forward `service/web` port 3000. Use a Docker-group
+  shell. Real Supabase public settings must be image build arguments.
+- C3/C4/C5 remain separate gates. A owns final shared docs/main integration.
+
+## C3 — functional private monitoring, 2026-10-18
+
+- Commit: this C3 commit (`feat: provision real application and Kubernetes dashboards`).
+- Prometheus/Grafana/kube-state-metrics deploy successfully. All seven expected
+  targets are up: four application services, RabbitMQ, kube-state-metrics and
+  cAdvisor. 348 real metric families collected; `promtool check config` passes.
+- App counters/histograms, durable sessions, pod CPU/memory, deployment replicas
+  and RabbitMQ ready/unacknowledged families are present. Two provisioned Grafana
+  dashboards are mounted; private Grafana login is operator plus the password
+  in ignored `infra/k8s/.local/secret.env`. No anonymous Grafana access.
+- First check had no HTTP series because new app pods had received only probes.
+  Real table/menu/payment reads return 200; subsequent collection passes.
+- Native discovery, verified TLS through Kubernetes API for cAdvisor, bounded
+  RBAC, 15-second scraping, five-second dashboards, 24-hour/2 GiB retention.
+- Local Compose-only scrape config: `infra/monitoring/prometheus-compose.yml`.
+  Set `OPS_ENVIRONMENT=local-compose` there; Kubernetes values stay unavailable.
+- Quick run: `kubectl --context=tablesync apply -k infra/monitoring`; forward
+  `service/grafana 3001:3000`. Source evidence is in `infra/monitoring/evidence`.
+- No screenshot or browser Grafana login rehearsal claimed. HPA panels await C5.
+
+## C4 — Ops code handoff
+
+- Functional module/page commit: `0978d6e`.
+- B-owned files: `services/api-gateway/src/ops.js`, `apps/web/lib/ops.ts`, Ops page.
+- A integration request: import `createOpsReader, registerOpsRoutes` from
+  `./src/ops.js` in gateway and call `registerOpsRoutes(app, { reader:
+  createOpsReader({ prometheusUrl: process.env.PROMETHEUS_URL, grafanaUrl:
+  process.env.GRAFANA_URL }) })` after `registerProductRoutes`.
+- Existing product middleware verifies operator JWT and sets `request.identity`.
+  Route also checks operator role, rejects query parameters and disables cache.
+- A proxy allowlist/demo cookie changes are included in A `fc1bfa3`, cherry-picked
+  as B `b23d909`. Gateway registration remains A-owned.
+- Reader has fixed queries, 2.5-second deadlines, five-second cache and source
+  timestamp queries. Zero remains valid; NaN/empty/failure is unavailable; source
+  samples older than 45 seconds are stale. Page polls every five seconds and
+  removes all preview charts/events/topology claims. Health means scrape reachability.
+- Peer-message tool now rejects outgoing coordination with `approval policy is
+  never`; exact integration requests are recorded here for A. No shared A files
+  are edited by B after A's latest boundary request.

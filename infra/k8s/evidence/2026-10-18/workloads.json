@@ -1,0 +1,323 @@
+[
+  {
+    "kind": "Deployment",
+    "name": "api-gateway",
+    "replicas": 1,
+    "containers": [
+      {
+        "name": "api-gateway",
+        "image": "tablesync/api-gateway:63c1207fc21c",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        },
+        "readinessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/readyz",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 2
+        },
+        "livenessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/livez",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 2
+        }
+      }
+    ]
+  },
+  {
+    "kind": "Deployment",
+    "name": "order",
+    "replicas": 1,
+    "containers": [
+      {
+        "name": "order",
+        "image": "tablesync/order:63c1207fc21c",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        },
+        "readinessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/readyz",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 2
+        },
+        "livenessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/livez",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 2
+        }
+      }
+    ]
+  },
+  {
+    "kind": "Deployment",
+    "name": "payment",
+    "replicas": 1,
+    "containers": [
+      {
+        "name": "payment",
+        "image": "tablesync/payment:63c1207fc21c",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        },
+        "readinessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/readyz",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 2
+        },
+        "livenessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/livez",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 2
+        }
+      }
+    ]
+  },
+  {
+    "kind": "Deployment",
+    "name": "redis",
+    "replicas": 1,
+    "containers": [
+      {
+        "name": "redis",
+        "image": "redis:7.4.1-alpine",
+        "resources": {
+          "limits": {
+            "cpu": "250m",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "64Mi"
+          }
+        },
+        "readinessProbe": {
+          "exec": {
+            "command": [
+              "redis-cli",
+              "ping"
+            ]
+          },
+          "failureThreshold": 3,
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 1
+        },
+        "livenessProbe": null
+      }
+    ]
+  },
+  {
+    "kind": "Deployment",
+    "name": "session",
+    "replicas": 1,
+    "containers": [
+      {
+        "name": "session",
+        "image": "tablesync/session:63c1207fc21c",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        },
+        "readinessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/readyz",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 2
+        },
+        "livenessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/livez",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 2
+        }
+      }
+    ]
+  },
+  {
+    "kind": "Deployment",
+    "name": "web",
+    "replicas": 1,
+    "containers": [
+      {
+        "name": "web",
+        "image": "tablesync/web:63c1207fc21c",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "200m",
+            "memory": "256Mi"
+          }
+        },
+        "readinessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/api/health",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 2
+        },
+        "livenessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/api/health",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 2
+        }
+      }
+    ]
+  },
+  {
+    "kind": "StatefulSet",
+    "name": "postgres",
+    "replicas": 1,
+    "containers": [
+      {
+        "name": "postgres",
+        "image": "postgres:16.4-alpine",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "200m",
+            "memory": "256Mi"
+          }
+        },
+        "readinessProbe": {
+          "exec": {
+            "command": [
+              "pg_isready",
+              "-U",
+              "tablesync",
+              "-d",
+              "tablesync"
+            ]
+          },
+          "failureThreshold": 3,
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 1
+        },
+        "livenessProbe": null
+      }
+    ]
+  },
+  {
+    "kind": "StatefulSet",
+    "name": "rabbitmq",
+    "replicas": 1,
+    "containers": [
+      {
+        "name": "rabbitmq",
+        "image": "rabbitmq:3.13.7-management-alpine",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "200m",
+            "memory": "256Mi"
+          }
+        },
+        "readinessProbe": {
+          "exec": {
+            "command": [
+              "rabbitmq-diagnostics",
+              "-q",
+              "ping"
+            ]
+          },
+          "failureThreshold": 3,
+          "periodSeconds": 10,
+          "successThreshold": 1,
+          "timeoutSeconds": 5
+        },
+        "livenessProbe": null
+      }
+    ]
+  }
+]

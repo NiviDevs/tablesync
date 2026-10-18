@@ -1,0 +1,14 @@
+# Optional local Compose demo: application HTTP metrics only; no Kubernetes claims.
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: tablesync-applications
+    static_configs:
+      - targets: ['api-gateway:8080']
+        labels: {service: api-gateway, environment: local-compose}
+      - targets: ['session:8081']
+        labels: {service: session, environment: local-compose}
+      - targets: ['order:8082']
+        labels: {service: order, environment: local-compose}
+      - targets: ['payment:8083']
+        labels: {service: payment, environment: local-compose}
