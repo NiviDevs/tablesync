@@ -1,3 +1,4 @@
+import { registerTelemetry, registerHealth, fastifyOptions, registerShutdown, trackBroker } from '@tablesync/telemetry';
 import Fastify from 'fastify';
 import amqp from 'amqplib';
 import { Pool } from 'pg';
@@ -16,6 +17,7 @@ const paymentUrl = process.env.PAYMENT_SERVICE_URL ?? 'http://localhost:8083';
 const rabbitUrl = process.env.RABBITMQ_URL ?? 'amqp://guest:guest@localhost:5672';
 let connection;
 let broker;
+let brokerReady = () => false;
 async function privateJson(base, path, body) {
   const response = await fetch(new URL(path, base), { method: body === undefined ? 'GET' : 'POST',
     headers: { authorization: `Bearer ${process.env.INTERNAL_API_SECRET}`, 'content-type': 'application/json' },
@@ -39,8 +41,10 @@ const outbox = createOutbox({ pool: database, getChannel: () => broker });
 const kitchen = createKitchen({ pool: database, orderView: checkoutStore.orderView });
 const restaurant = createRestaurantStore({ pool: database });
 
-export function buildApp() {
-  const app = Fastify({ logger: true, bodyLimit: 16 * 1024 });
+export function buildApp({ checkDependencies = async () => { await database.query({ text: 'SELECT 1', query_timeout: 900 }); return brokerReady(); } } = {}) {
+  const app = Fastify(fastifyOptions);
+  registerTelemetry(app, { service: 'order' });
+  registerHealth(app, { checkDependencies });
   app.addHook('onRequest', async (request, reply) => {
     const secret = process.env.INTERNAL_API_SECRET;
     if (request.url.startsWith('/v1/') && (!secret || request.headers.authorization !== `Bearer ${secret}`)) {
@@ -79,6 +83,7 @@ export function buildApp() {
 async function connectBroker() {
   connection = await amqp.connect(rabbitUrl);
   broker = await connection.createConfirmChannel();
+  brokerReady = trackBroker(connection, broker);
   broker.on('error', () => {});
   broker.on('close', () => { broker = undefined; });
   const channel = broker;
@@ -106,11 +111,8 @@ async function start() {
     finally { running = false; }
   }, 5000);
   await app.listen({ port: Number(process.env.PORT ?? 8082), host: '0.0.0.0' });
-  let stopping = false;
-  async function stop() {
-    if (stopping) return; stopping = true;
-    clearInterval(timer); await app.close(); await connection?.close(); await database.end();
-  }
-  process.once('SIGTERM', stop); process.once('SIGINT', stop);
+  registerShutdown(app, async () => {
+    clearInterval(timer); await Promise.allSettled([connection?.close(), database.end()]);
+  });
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) start();

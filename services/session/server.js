@@ -1,3 +1,4 @@
+import { registerTelemetry, registerHealth, fastifyOptions, registerShutdown, trackBroker, registerActiveSessions } from '@tablesync/telemetry';
 import Fastify from 'fastify';
 import amqp from 'amqplib';
 import { randomUUID } from 'node:crypto';
@@ -8,7 +9,9 @@ import { createRegistry } from './src/registry.js';
 
 const database = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://tablesync:tablesync@localhost:5432/tablesync' });
 const redis = createClient({ url: process.env.REDIS_URL ?? 'redis://localhost:6379' });
+let connection;
 let broker;
+let brokerReady = () => false;
 const rabbitUrl = process.env.RABBITMQ_URL ?? `amqp://${encodeURIComponent(process.env.RABBITMQ_DEFAULT_USER ?? 'guest')}:${encodeURIComponent(process.env.RABBITMQ_DEFAULT_PASS ?? 'guest')}@${process.env.RABBITMQ_HOST ?? 'localhost'}:${process.env.RABBITMQ_PORT ?? '5672'}`;
 async function publish(type, data) {
   if (broker) broker.publish('tablesync.events', type, Buffer.from(JSON.stringify({ id: randomUUID(), version: 1,
@@ -23,8 +26,13 @@ const orderClient = { async sealSession(id) {
   }
 } };
 
-export function buildApp({ pool = database, registry = createRegistry({ pool, orderClient }), internalSecret = process.env.INTERNAL_API_SECRET } = {}) {
-  const app = Fastify({ logger: true, bodyLimit: 16 * 1024 });
+export function buildApp({ pool = database, registry = createRegistry({ pool, orderClient }), internalSecret = process.env.INTERNAL_API_SECRET,
+  checkDependencies = async () => { await pool.query({ text: 'SELECT 1', query_timeout: 900 }); return redis.isReady && brokerReady(); } } = {}) {
+  const app = Fastify(fastifyOptions);
+  const registryMetrics = registerTelemetry(app, { service: 'session' });
+  registerHealth(app, { checkDependencies });
+  registerActiveSessions(app, { registry: registryMetrics, count: async () => Number((await pool.query({
+    text: "SELECT count(*) AS count FROM table_sessions WHERE status='OPEN'", query_timeout: 900 })).rows[0].count) });
   app.addHook('onRequest', async (request, reply) => {
     if (request.url.startsWith('/v1/') && (!internalSecret || request.headers.authorization !== `Bearer ${internalSecret}`)) {
       return reply.code(internalSecret ? 401 : 503).send({ error: { code: 'INTERNAL_AUTH_REQUIRED', message: 'Private service credential required' }, requestId: request.id });
@@ -61,11 +69,14 @@ async function start() {
   if (!process.env.INTERNAL_API_SECRET) throw new Error('INTERNAL_API_SECRET is required');
   await database.query('SELECT 1');
   await redis.connect();
-  const connection = await amqp.connect(rabbitUrl);
+  connection = await amqp.connect(rabbitUrl);
   broker = await connection.createChannel();
+  brokerReady = trackBroker(connection, broker);
   await broker.assertExchange('tablesync.events', 'topic', { durable: true });
   await broker.assertQueue('tablesync.audit', { durable: true });
   await broker.bindQueue('tablesync.audit', 'tablesync.events', '#');
-  await buildApp().listen({ port: Number(process.env.PORT ?? 8081), host: '0.0.0.0' });
+  const app = buildApp();
+  registerShutdown(app, async () => { await Promise.allSettled([connection?.close(), redis.quit(), database.end()]); });
+  await app.listen({ port: Number(process.env.PORT ?? 8081), host: '0.0.0.0' });
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) start();
