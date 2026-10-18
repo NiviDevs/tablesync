@@ -11,6 +11,8 @@ const database = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postg
 // pg removes failed idle clients; consume its error event so dependency loss does not kill HTTP.
 database.on('error', error => console.error(JSON.stringify({ level: 'error', code: error.code, message: 'database idle connection failed' })));
 const redis = createClient({ url: process.env.REDIS_URL ?? 'redis://localhost:6379' });
+// Redis retries disconnects; consume its error event so HTTP can remain live.
+redis.on('error', error => console.error(JSON.stringify({ level: 'error', code: error.code, message: 'redis connection failed' })));
 let connection;
 let broker;
 let brokerReady = () => false;
