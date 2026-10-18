@@ -9,6 +9,7 @@
     "cloud": "bash scripts/cloud.sh",
     "cloud:open": "bash scripts/cloud.sh open",
     "cloud:stop": "bash scripts/cloud.sh stop",
+    "cloud:password": "bash scripts/cloud.sh password",
     "demo": "node scripts/demo.mjs",
     "demo:stop": "node scripts/demo.mjs stop",
     "demo:logs": "node scripts/demo.mjs logs",

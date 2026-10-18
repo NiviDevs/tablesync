@@ -2,7 +2,19 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export TABLESYNC_CLOUD_ACTION="${1:-${TABLESYNC_CLOUD_ACTION:-start}}"
-case "$TABLESYNC_CLOUD_ACTION" in start|open|stop) ;; *) echo 'Use npm run cloud, cloud:open or cloud:stop'; exit 1;; esac
+case "$TABLESYNC_CLOUD_ACTION" in start|open|stop|password) ;; *) echo 'Use npm run cloud, cloud:open, cloud:stop or cloud:password'; exit 1;; esac
+if [[ "$TABLESYNC_CLOUD_ACTION" == password ]]; then
+  node --input-type=module - <<'JS'
+import { readFileSync } from 'node:fs';
+try {
+  const settings = readFileSync(process.env.SECRET_FILE || 'infra/k8s/.local/secret.env', 'utf8');
+  const password = settings.match(/^GRAFANA_ADMIN_PASSWORD=(.+)$/m)?.[1];
+  if (!password) throw new Error('missing');
+  console.log(`Grafana username: operator\nGrafana password: ${password}`);
+} catch { console.error('Start the cloud demo first with npm run cloud.'); process.exitCode = 1; }
+JS
+  exit $?
+fi
 if ! docker info >/dev/null 2>&1; then
   if [[ "$(uname -s)" == Linux && -z "${TABLESYNC_DOCKER_GROUP_READY:-}" ]] && id -nG "$(id -un)" | tr ' ' '\n' | grep -qx docker; then
     exec newgrp docker <<'SH'
@@ -40,5 +52,6 @@ echo
 echo "Cloud demo: http://localhost:$web_port"
 echo "Owner/operator login: http://localhost:$web_port/restaurant/sign-in"
 echo "Grafana: http://localhost:$grafana_port"
+echo 'Grafana login: operator. Run npm run cloud:password in another terminal to see its local password.'
 echo 'Keep this terminal open. Ctrl+C closes browser forwarding; cloud:stop stops the cluster.'
 wait -n "${forward_pids[@]}"

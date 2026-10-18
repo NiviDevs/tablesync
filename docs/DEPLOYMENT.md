@@ -63,6 +63,8 @@ starts the cluster app/monitoring, and forwards web 3000 and Grafana 3001. Keep
 that terminal open. Ctrl+C closes forwarding but leaves the cluster running.
 
 `npm run cloud:open` reopens a running cluster without rebuilding.
+Grafana uses username **operator**. Run `npm run cloud:password` in another
+terminal to display its generated local password.
 `npm run cloud:stop` stops Minikube and preserves data. Full details are in
 [the cloud guide](../infra/k8s/README.md). Compose and Minikube have separate
 databases. For different browser ports, use `WEB_PORT=3002 GRAFANA_PORT=3003 npm run cloud:open`.
