@@ -7,6 +7,7 @@ import { createCheckoutStore } from './src/checkout.js';
 import { createOutbox } from './src/outbox.js';
 import { processPaymentDelivery } from './src/consumer.js';
 import { createKitchen } from './src/kitchen.js';
+import { createRestaurantStore } from './src/restaurant.js';
 export { isCommittedPaymentEvent } from './src/checkout.js';
 
 const database = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://tablesync:tablesync@localhost:5432/tablesync' });
@@ -36,6 +37,7 @@ const checkoutStore = createCheckoutStore({ pool: database, sessionClient: table
 } });
 const outbox = createOutbox({ pool: database, getChannel: () => broker });
 const kitchen = createKitchen({ pool: database, orderView: checkoutStore.orderView });
+const restaurant = createRestaurantStore({ pool: database });
 
 export function buildApp() {
   const app = Fastify({ logger: true, bodyLimit: 16 * 1024 });
@@ -52,6 +54,13 @@ export function buildApp() {
   });
   app.get('/health', async () => { await database.query('SELECT 1'); return { service: 'order', status: 'ok', rabbitmq: Boolean(broker) }; });
   app.get('/v1/menu', request => cartStore.listMenu(request.headers['x-restaurant-id']));
+  app.get('/v1/restaurant/menu', request => cartStore.listMenu(request.headers['x-restaurant-id']));
+  app.post('/v1/restaurant/menu', (request, reply) => {
+    reply.code(201);
+    return restaurant.saveDish({ restaurantId: request.headers['x-restaurant-id'], body: request.body });
+  });
+  app.put('/v1/restaurant/menu/:id', request => restaurant.saveDish({ restaurantId: request.headers['x-restaurant-id'], id: request.params.id, body: request.body }));
+  app.get('/v1/restaurant/analytics', request => restaurant.analytics({ restaurantId: request.headers['x-restaurant-id'], days: request.query.days, date: request.query.date }));
   app.get('/v1/sessions/:id/cart', request => cartStore.readCart(request.params.id));
   app.put('/v1/sessions/:id/cart/items/:menuItemId', request => cartStore.setQuantity({ ...request.body,
     sessionId: request.params.id, menuItemId: request.params.menuItemId, participantId: request.headers['x-participant-id'] }));

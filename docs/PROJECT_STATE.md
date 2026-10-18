@@ -1,3 +1,5 @@
+> Current implementation update (2026-10-18): guest/restaurant pages use the service gateway. Menu/table management and daily owner analytics are implemented. Read [Role A progress](progress/A.md) and [STATUS](STATUS.md) for current scope and evidence. The source audit below is historical.
+
 # Current project state
 
 Audited from repository source on 2026-10-16. This audit did not execute the application, apply migrations, query hosted resources, or run the test suite. Previous documents reported checks, but those reports are not fresh verification.

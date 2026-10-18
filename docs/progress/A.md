@@ -172,3 +172,26 @@ The original checkout remains on `main`; B-owned files are untouched.
   unverified. Test credentials are temporary and do not configure normal staff
   sign-in. The seeded menu remains read-only; dish editing and daily analytics
   are not implemented. Ops/telemetry/scaling stay with B; F2 is still joint work.
+
+## Owner feature completion — 2026-10-18
+
+- User requested direct feature implementation and explicitly skipped further
+  automated testing. Scope expands beyond P5 to the remaining owner features.
+- Added dish creation/editing, descriptions, emoji, rupee price inputs and
+  availability controls at `/restaurant/menu`, using the existing Order catalog.
+- Added `/restaurant/dashboard`: simulated sales, served-order count, quantity,
+  average order, ordering guest count, daily chart/counts, per-dish performance,
+  table sales, current occupancy and seated guest count. Filters cover 1/7/30/90
+  days through a selected date; clicking a chart day opens its dish breakdown.
+- Analytics use all served orders in the period and Asia/Kolkata order dates;
+  there are no fabricated sales figures or 100-order truncation.
+- Restored table creation and removal for unused tables; seating history stays.
+- Added common owner navigation and updated the landing copy to match table-level
+  simulated payments. Existing staff authentication and private service ownership
+  apply to every new route. No new dependency, migration or event contract.
+- Automated test suites were not run for this expansion, as requested. Production
+  compilation is recorded separately; P5 test results apply to the earlier code.
+- Ops/infrastructure remain B-owned. Live Supabase identity and phone/tunnel
+  access still depend on the existing environment; no accounts were provisioned.
+- Production build passes with the new owner routes. Existing Compose Session,
+  Order and gateway images rebuilt and started successfully; no volumes deleted.

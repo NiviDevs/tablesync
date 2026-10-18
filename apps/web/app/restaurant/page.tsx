@@ -1,10 +1,10 @@
 "use client";
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { api, type OrderView, type TableView } from '@/lib/api';
 import { usePoll } from '@/lib/use-poll';
 import { KitchenTicket } from '@/components/kitchen-ticket';
+import { RestaurantNav } from '@/components/restaurant-nav';
 
 export default function Restaurant() {
   const [tables, setTables] = useState<TableView[]>([]);
@@ -12,6 +12,7 @@ export default function Restaurant() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [newTable, setNewTable] = useState('');
   const locked = useRef(false);
   const [selected, setSelected] = useState<TableView | null>(null);
   const [qr, setQr] = useState('');
@@ -36,16 +37,17 @@ export default function Restaurant() {
   async function mutate(path: string, method: string, body?: unknown) {
     if (locked.current) return;
     locked.current = true; setBusy(true); setError('');
-    try { await api(path, { method, body }); }
+    try { await api(path, { method, body }); return true; }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not update'); }
     finally { locked.current = false; setBusy(false); poll.refresh(); }
   }
   const active = orders.filter(order => order.status !== 'SERVED');
-  return <main className="restaurant-page"><nav className="restaurant-nav"><Link className="brand inverse" href="/">table<i>sync</i></Link><div className="table-actions"><a href="/restaurant">Tables</a><a href="/restaurant?view=kitchen">Kitchen</a><Link href="/restaurant/sign-in">Staff sign-in</Link></div></nav>
+  return <main className="restaurant-page"><RestaurantNav />
     <section className="restaurant-intro"><p className="kicker light">Juniper House · {kitchenOnly ? 'Kitchen' : 'Restaurant portal'}</p><h1>{kitchenOnly ? 'Orders to prepare.' : 'Tables and orders, in one place.'}</h1><p>Guests share a table order. Payments are simulated; no money is collected.</p></section>
     <section className="restaurant-board">{(error || poll.error) && <p role="alert" className="inline-error">{error || poll.error} <button onClick={poll.refresh}>Retry refresh</button></p>}{poll.stale && <p role="status">Updates are stale. Showing the last received data.</p>}
-      {!kitchenOnly && <><div className="board-heading"><div><p className="kicker">Your tables</p><h2>{loading ? 'Loading…' : `${tables.filter(table => table.session).length} occupied / ${tables.length} tables`}</h2></div></div>
-      <div className="table-list">{tables.map(table => <article key={table.code}><div><strong>{table.name}</strong><small>{table.code} · {table.session?.status ?? 'Available'}</small>{table.session && <><p>{table.session.participants.length} guests · seated {Math.max(0, Math.floor((Date.now() - Date.parse(table.session.openedAt)) / 60000))} min</p><p>{orders.filter(order => order.sessionId === table.session?.id).map(order => order.status).join(', ') || 'Choosing dishes'}</p></>}</div><div className="table-actions"><button onClick={() => setSelected(table)}>Show QR</button>{table.session && <button disabled={busy || poll.stale} onClick={() => mutate(`/v1/sessions/${table.session!.id}/close`, 'POST')}>{table.session.status === 'CLOSING' ? 'Retry close' : 'Close seating'}</button>}</div></article>)}</div></>}
+      {!kitchenOnly && <><div className="board-heading"><div><p className="kicker">Your tables</p><h2>{loading ? 'Loading…' : `${tables.filter(table => table.session).length} occupied / ${tables.length} tables`}</h2></div>
+        <form className="table-create" onSubmit={async event => { event.preventDefault(); if (await mutate('/v1/restaurant/tables', 'POST', { name: newTable })) setNewTable(''); }}><input aria-label="New table name" placeholder="e.g. Patio 4" required maxLength={80} value={newTable} onChange={event => setNewTable(event.target.value)} /><button disabled={busy || poll.stale || !newTable.trim()}>Add table</button></form></div>
+      <div className="table-list">{tables.map(table => <article key={table.code}><div><strong>{table.name}</strong><small>{table.code} · {table.session?.status ?? 'Available'}</small>{table.session && <><p>{table.session.participants.length} guests · seated {Math.max(0, Math.floor((Date.now() - Date.parse(table.session.openedAt)) / 60000))} min</p><p>{orders.filter(order => order.sessionId === table.session?.id).map(order => order.status).join(', ') || 'Choosing dishes'}</p></>}</div><div className="table-actions"><button onClick={() => setSelected(table)}>Show QR</button>{table.session && <button disabled={busy || poll.stale} onClick={() => mutate(`/v1/sessions/${table.session!.id}/close`, 'POST')}>{table.session.status === 'CLOSING' ? 'Retry close' : 'Close seating'}</button>}{!table.session && <button className="remove-table" disabled={busy || poll.stale} onClick={() => mutate(`/v1/restaurant/tables/${encodeURIComponent(table.code)}`, 'DELETE')}>Remove table</button>}</div></article>)}</div></>}
       <div className="board-heading order-heading"><div><p className="kicker">Kitchen queue</p><h2>{loading ? 'Loading orders…' : `${active.length} active tickets`}</h2></div></div>
       <div className="order-list">{active.map(order => <KitchenTicket key={order.id} order={order} busy={busy || poll.stale} advance={status => mutate(`/v1/orders/${order.id}/status`, 'PATCH', { status })} />)}{!loading && !active.length && !poll.error && <div className="empty-orders"><h3>The pass is clear.</h3><p>Confirmed table orders appear here automatically.</p></div>}</div>
       {!kitchenOnly && orders.some(order => order.status === 'SERVED') && <details><summary>Recently served orders (within latest 100 orders)</summary><div className="order-list">{orders.filter(order => order.status === 'SERVED').map(order => <KitchenTicket key={order.id} order={order} busy={false} advance={() => {}} />)}</div></details>}

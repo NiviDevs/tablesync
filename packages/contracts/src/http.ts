@@ -15,3 +15,11 @@ export type CheckoutView = { id: string; sessionId: string; status: CheckoutStat
 export type OrderView = { id: string; sessionId: string; restaurantId: string;
   tableCode: string; status: OrderStatus; items: CartLine[]; total: Money; createdAt: string };
 export type ApiError = { error: { code: string; message: string }; requestId: string };
+export type MenuItem = { id: string; name: string; description: string; emoji: string; unitPriceMinor: number; available: boolean };
+export type RestaurantAnalytics = {
+  start: string; end: string; days: number; timezone: 'Asia/Kolkata'; simulated: true; generatedAt: string;
+  summary: { orders: number; salesMinor: number; guests: number; quantity: number };
+  daily: { date: string; orders: number; salesMinor: number }[];
+  dishes: { id: string; name: string; quantity: number; orders: number; salesMinor: number }[];
+  tables: { code: string; orders: number; salesMinor: number }[];
+};

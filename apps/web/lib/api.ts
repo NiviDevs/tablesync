@@ -1,6 +1,7 @@
 import type { ApiError } from '../../../packages/contracts/src/http';
 export type { CartView, CheckoutView, OrderView, OrderStatus, TableView } from '../../../packages/contracts/src/http';
-export type Menu = { items: { id: string; name: string; description: string; emoji: string; unitPriceMinor: number; available: boolean }[] };
+export type { MenuItem, RestaurantAnalytics } from '../../../packages/contracts/src/http';
+export type Menu = { items: import('../../../packages/contracts/src/http').MenuItem[] };
 
 export class ApiFailure extends Error {
   constructor(public status: number, public code: string, message: string) { super(message); }

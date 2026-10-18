@@ -66,6 +66,15 @@ export function registerProductRoutes(app, { auth, internalSecret, sessionUrl, o
     const identity = await auth.verifyStaff(bearer(request));
     return callSession('/v1/restaurant/tables', { identity });
   });
+  app.post('/v1/restaurant/tables', async (request, reply) => {
+    const identity = await auth.verifyStaff(bearer(request));
+    if (!request.body || Object.keys(request.body).some(key => key !== 'name')) fail(400, 'INVALID_TABLE', 'Only the table name is accepted');
+    return reply.code(201).send(await callSession('/v1/restaurant/tables', { method: 'POST', body: request.body, identity }));
+  });
+  app.delete('/v1/restaurant/tables/:code', async request => {
+    const identity = await auth.verifyStaff(bearer(request));
+    return callSession(`/v1/restaurant/tables/${encodeURIComponent(request.params.code)}`, { method: 'DELETE', identity });
+  });
   app.get('/v1/menu', async request => {
     if (typeof request.query.tableCode !== 'string') fail(400, 'TABLE_CODE_REQUIRED', 'A known tableCode is required');
     const table = await callSession(`/v1/tables/${encodeURIComponent(request.query.tableCode)}`);
@@ -105,6 +114,24 @@ export function registerProductRoutes(app, { auth, internalSecret, sessionUrl, o
   app.get('/v1/restaurant/orders', async request => {
     const identity = await auth.verifyStaff(bearer(request));
     return callOrder('/v1/restaurant/orders', { identity });
+  });
+  app.get('/v1/restaurant/menu', async request => {
+    const identity = await auth.verifyStaff(bearer(request));
+    return callOrder('/v1/restaurant/menu', { identity });
+  });
+  for (const method of ['POST', 'PUT']) app.route({ method, url: method === 'POST' ? '/v1/restaurant/menu' : '/v1/restaurant/menu/:id', handler: async (request, reply) => {
+    const identity = await auth.verifyStaff(bearer(request));
+    const result = await callOrder(`/v1/restaurant/menu${method === 'PUT' ? `/${encodeURIComponent(request.params.id)}` : ''}`, { method, body: request.body, identity });
+    return reply.code(method === 'POST' ? 201 : 200).send(result);
+  } });
+  app.get('/v1/restaurant/analytics', async request => {
+    const identity = await auth.verifyStaff(bearer(request));
+    const query = new URLSearchParams();
+    for (const key of ['days', 'date']) if (request.query[key] !== undefined) {
+      if (typeof request.query[key] !== 'string') fail(400, 'INVALID_ANALYTICS_RANGE', 'Expected a single date and period');
+      query.set(key, request.query[key]);
+    }
+    return callOrder(`/v1/restaurant/analytics?${query}`, { identity });
   });
   app.patch('/v1/orders/:id/status', async request => {
     const identity = await auth.verifyStaff(bearer(request));

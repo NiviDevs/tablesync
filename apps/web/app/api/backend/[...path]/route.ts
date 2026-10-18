@@ -8,7 +8,9 @@ const routes: [string, RegExp][] = [
   ['PUT|DELETE', /^v1\/sessions\/[a-f0-9-]+\/cart\/items\/[a-zA-Z0-9_-]+$/],
   ['POST', /^v1\/sessions\/[a-f0-9-]+\/checkouts$/],
   ['GET', /^v1\/checkouts\/[a-f0-9-]+$/], ['POST', /^v1\/checkouts\/[a-f0-9-]+\/retry$/],
-  ['GET', /^v1\/restaurant\/(tables|orders)$/], ['PATCH', /^v1\/orders\/[a-f0-9-]+\/status$/],
+  ['GET', /^v1\/restaurant\/(tables|orders|menu|analytics)$/], ['PATCH', /^v1\/orders\/[a-f0-9-]+\/status$/],
+  ['POST', /^v1\/restaurant\/menu$/], ['PUT', /^v1\/restaurant\/menu\/[a-zA-Z0-9_-]+$/],
+  ['POST', /^v1\/restaurant\/tables$/], ['DELETE', /^v1\/restaurant\/tables\/[A-Z0-9-]+$/],
   ['POST', /^v1\/sessions\/[a-f0-9-]+\/close$/],
 ];
 const failure = (status: number, code: string, message: string) => Response.json(
@@ -54,6 +56,10 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
   }
   const upstream = new URL(`/${path}`, process.env.GATEWAY_URL || 'http://localhost:8080');
   if (path === 'v1/menu') upstream.searchParams.set('tableCode', url.searchParams.get('tableCode') ?? '');
+  if (path === 'v1/restaurant/analytics') for (const key of ['days', 'date']) {
+    const value = url.searchParams.get(key);
+    if (value !== null) upstream.searchParams.set(key, value);
+  }
   try {
     const response = await fetch(upstream, { method: request.method, headers, body, cache: 'no-store',
       redirect: 'error', signal: AbortSignal.timeout(5000) });

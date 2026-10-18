@@ -70,6 +70,30 @@ export function createRegistry({ pool, orderClient }) {
     const tables = await pool.query('SELECT code FROM physical_tables WHERE restaurant_id=$1 ORDER BY code', [restaurantId]);
     return Promise.all(tables.rows.map(t => tableView(pool, t.code)));
   }
+  async function createTable({ restaurantId, name, ...extra }) {
+    if (Object.keys(extra).length || !uuid.test(restaurantId) || typeof name !== 'string' || !name.trim() || [...name.trim()].length > 80) {
+      fail(400, 'INVALID_TABLE', 'Provide a table name between 1 and 80 characters');
+    }
+    const code = `JH-${randomUUID().slice(0, 8).toUpperCase()}`;
+    await pool.query('INSERT INTO physical_tables(code,restaurant_id,name) VALUES($1,$2,$3)', [code, restaurantId, name.trim()]);
+    return getTable(code);
+  }
+  async function removeTable({ restaurantId, code: inputCode }) {
+    const code = canonicalCode(inputCode);
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const table = (await client.query('SELECT * FROM physical_tables WHERE code=$1 AND restaurant_id=$2 FOR UPDATE', [code, restaurantId])).rows[0];
+      if (!table) fail(404, 'TABLE_NOT_FOUND', 'Table not found for this restaurant');
+      if ((await client.query('SELECT id FROM table_sessions WHERE table_code=$1 LIMIT 1', [code])).rowCount) {
+        fail(409, 'TABLE_HAS_HISTORY', 'This table has seating history. Close its seating to make it available again.');
+      }
+      await client.query('DELETE FROM physical_tables WHERE code=$1', [code]);
+      await client.query('COMMIT');
+      return { removed: true };
+    } catch (error) { await client.query('ROLLBACK'); throw error; }
+    finally { client.release(); }
+  }
   async function closeSession({ sessionId, restaurantId }) {
     const client = await pool.connect();
     try {
@@ -98,5 +122,5 @@ export function createRegistry({ pool, orderClient }) {
       finally { client.release(); }
     }
   }
-  return { getTable, joinTable, getSession, listTables, closeSession };
+  return { getTable, joinTable, getSession, listTables, createTable, removeTable, closeSession };
 }

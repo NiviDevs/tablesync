@@ -1,3 +1,5 @@
+> 2026-10-18 update: the user expanded scope after P5. Owner menu, table management and daily business analytics are now implemented; see the latest entry in [A.md](A.md). Automated tests for this expansion were explicitly skipped.
+
 > Historical handoff, superseded: P4 (`b8fc4b7`) and P5 are complete.
 > Current results and limits are in [A.md](A.md); commands are in [P5-TESTING.md](P5-TESTING.md).
 > Compose now runs the rebuilt P4 services with migration 008. The original notes below describe the earlier state.

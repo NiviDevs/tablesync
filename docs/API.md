@@ -117,3 +117,35 @@ may use these stable ports, Node 22.23.3/npm 10.9.9, and `npm run db:migrate` wi
 `DATABASE_URL`/`MIGRATIONS_DIR`. Gateway Ops registration, instrumentation hooks,
 Dockerfile/Compose changes, and shared dependencies require an A handoff.
 Future breaking contract proposals require agreement before implementation.
+
+## Owner menu and business features — 2026-10-18
+
+These additive routes use the existing staff bearer credential, restaurant
+membership and same-origin proxy. They do not change event contracts.
+
+| Method/path | Body/query | Result |
+|---|---|---|
+| GET `/v1/restaurant/menu` | None | `{items:MenuItem[],currency:'INR'}` including unavailable dishes |
+| POST `/v1/restaurant/menu` | `{name,description,emoji,unitPriceMinor,available}` | 201 saved `MenuItem`, with server-generated ID |
+| PUT `/v1/restaurant/menu/:id` | Same complete dish fields | Updated dish within the staff restaurant; otherwise 404 |
+| GET `/v1/restaurant/analytics` | `days=1,7,30,90` and optional `date=YYYY-MM-DD` | `RestaurantAnalytics`; default 30 days ending today in Asia/Kolkata |
+| POST `/v1/restaurant/tables` | `{name}` | 201 `TableView`; generated QR table code |
+| DELETE `/v1/restaurant/tables/:code` | None | `{removed:true}`; only unused tables can be removed |
+
+Dish names are 1–120 characters, descriptions at most 500 characters, icons
+1–16 Unicode code points, and prices integer paise from 100 to 10,000,000.
+Availability is a boolean. Hiding a dish blocks new additions without removing
+old lines or order history. Menu edits apply when a guest next adds or changes
+that dish; frozen checkout/order snapshots retain their recorded name and price.
+
+Analytics count only SERVED orders from the service backend, using each order's
+creation date in Asia/Kolkata. Both end dates are inclusive. Sales are simulated
+amounts, not bank receipts or profit. All orders within the selected period are
+aggregated, without the kitchen listing's 100-order limit. Empty days return zero.
+The response includes period totals, distinct ordering participants, quantities,
+daily order counts and sales, dish quantities/order counts/sales and table totals.
+Changing the dashboard to one day gives dish performance for that day.
+
+Tables with seating history cannot be deleted; close their seating to reuse them.
+The table registry locks creation/deletion against joins and retains historical
+sessions. No schema migration or new dependency is required for these features.

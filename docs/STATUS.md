@@ -150,3 +150,17 @@ Keep evidence small and reproducible. Do not commit credentials, customer data, 
 - [Commands and test isolation](progress/P5-TESTING.md). Remote CI is configured,
   not executed. Live Supabase sign-in, phone/tunnel and B/F2 infrastructure
   integration remain unverified. Dish editing and daily analytics remain absent.
+
+## Owner feature expansion — 2026-10-18
+
+- Implemented menu creation/editing, price and availability controls, and table
+  creation/removal through the existing staff/service boundary.
+- Implemented owner dashboard with date/period selection, daily simulated sales
+  and orders, dish performance/quantities, order averages, table totals and live
+  seating counts. Counts derive from served service orders in Asia/Kolkata.
+- UI: `/restaurant/dashboard`, `/restaurant/menu`, `/restaurant`, and the existing
+  kitchen view. No new service, dependency, schema migration or payment provider.
+- User explicitly requested skipping further automated tests. Earlier P5 test
+  results are not verification of these new features. Ops and F2 remain B/joint work.
+- Production build passes with the new owner routes. Existing Compose Session,
+  Order and gateway images rebuilt and started successfully; no volumes deleted.

@@ -40,6 +40,11 @@ export function buildApp({ pool = database, registry = createRegistry({ pool, or
   app.get('/v1/tables/:code', request => registry.getTable(request.params.code));
   app.get('/v1/sessions/id/:id', request => registry.getSession(request.params.id));
   app.get('/v1/restaurant/tables', async request => ({ tables: await registry.listTables(request.headers['x-restaurant-id']) }));
+  app.post('/v1/restaurant/tables', (request, reply) => {
+    reply.code(201);
+    return registry.createTable({ ...request.body, restaurantId: request.headers['x-restaurant-id'] });
+  });
+  app.delete('/v1/restaurant/tables/:code', request => registry.removeTable({ code: request.params.code, restaurantId: request.headers['x-restaurant-id'] }));
   app.post('/v1/sessions/:id/close', request => registry.closeSession({ sessionId: request.params.id, restaurantId: request.headers['x-restaurant-id'] }));
   app.post('/v1/table-sessions/join', async (request, reply) => {
     const { tableCode, name, joinKey } = request.body ?? {};
