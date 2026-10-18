@@ -195,3 +195,18 @@ The original checkout remains on `main`; B-owned files are untouched.
   access still depend on the existing environment; no accounts were provisioned.
 - Production build passes with the new owner routes. Existing Compose Session,
   Order and gateway images rebuilt and started successfully; no volumes deleted.
+
+## C1 shared-service integration — 2026-10-18
+
+- Reviewed B handoff `fb9b2c4` and cherry-picked it as `89fbdd2`.
+- Integrated the telemetry workspace, exact `prom-client@15.1.3`, per-service
+  registries, bounded route labels, liveness/readiness, dependency deadlines,
+  Session's durable count and graceful shutdown/redaction hooks.
+- Offline `npm ci --ignore-scripts` succeeds with the lockfile unchanged.
+  No automated tests were run by A, following the user's latest instruction.
+  B's own check evidence remains in [B.md](B.md).
+- Existing Compose containers remain at the owner-feature image revision
+  `a85efae`. New images require B's C2 root-context workspace Dockerfiles;
+  rebuilding the old service-context Dockerfiles would omit telemetry.
+- B is preparing the focused C2 Docker/Compose/Next standalone/web health handoff.
+  No Ops, Kubernetes or monitoring source was edited by A.
