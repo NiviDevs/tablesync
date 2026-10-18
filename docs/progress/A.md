@@ -210,3 +210,20 @@ The original checkout remains on `main`; B-owned files are untouched.
   rebuilding the old service-context Dockerfiles would omit telemetry.
 - B is preparing the focused C2 Docker/Compose/Next standalone/web health handoff.
   No Ops, Kubernetes or monitoring source was edited by A.
+
+## C2 shared-image integration — 2026-10-18
+
+- Reviewed B's focused `63c1207` handoff and cherry-picked it as `3733ddc`.
+- Service Docker builds now use the root lockfile and include the telemetry
+  workspace and migration runner. Added the pinned-base standalone Next image,
+  standalone output configuration, web health route and Docker context exclusions.
+- Rebuilt/restarted all four services in existing Compose project
+  `tablesync-role-a-f0`. Compose exited 0; all seven containers are healthy.
+  Application data, ignored secrets and volumes were preserved. Running services
+  now contain C1 telemetry rather than the older owner-feature-only images.
+- No automated test suites were run by A, as requested. B's build evidence is in
+  [B.md](B.md). The standalone web image is available but this Compose file still
+  serves only the existing backend/dependency containers; B owns cluster hosting.
+- Supabase public settings are web build arguments; runtime-only settings cannot
+  replace browser-bundled values. Deployment notes must retain that distinction.
+- Cluster manifests, monitoring, Ops and scaling evidence remain B-owned work.

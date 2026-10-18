@@ -164,3 +164,15 @@ Keep evidence small and reproducible. Do not commit credentials, customer data, 
   results are not verification of these new features. Ops and F2 remain B/joint work.
 - Production build passes with the new owner routes. Existing Compose Session,
   Order and gateway images rebuilt and started successfully; no volumes deleted.
+
+## C1/C2 integration on Role A — 2026-10-18
+
+- Integrated B C1 as `89fbdd2` and B's focused C2 image changes as `3733ddc`.
+- Metrics, liveness/readiness, bounded dependency checks and durable Session count
+  are included in the four rebuilt service images. Root-context builds resolve
+  the shared telemetry workspace using the root lockfile.
+- Existing Compose rebuild/start exited 0, with all seven containers healthy.
+  No volumes or application data were deleted. Added standalone web image/config
+  and `/api/health`; the web image is not a new service in the existing Compose file.
+- Automated suites remain skipped by A at the user's request. Cluster rollout,
+  live monitoring/Ops and scaling remain B-owned and are not claimed verified here.
