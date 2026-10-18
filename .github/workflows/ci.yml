@@ -49,6 +49,9 @@ jobs:
       - run: npm run test:integration
       - run: docker compose -p tablesync-ci up -d --build --wait --wait-timeout 180
       - run: npm run smoke:services
+      - run: npm run build
+      - run: npm exec --workspace=@tablesync/web -- playwright install --with-deps chromium
+      - run: npm run test:e2e
       - name: Stop the isolated stack without deleting volumes
         if: always()
         run: docker compose -p tablesync-ci stop

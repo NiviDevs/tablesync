@@ -21,7 +21,9 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
   }
   const url = new URL(request.url);
   const staff = path.startsWith('v1/restaurant/') || path.endsWith('/status') || path.endsWith('/close');
-  if (staff && request.method !== 'GET' && request.headers.get('origin') !== url.origin) {
+  // Next's internal request URL can use its bind hostname; Host is the browser-facing authority.
+  const publicOrigin = `${url.protocol}//${request.headers.get('host')}`;
+  if (staff && request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) {
     return failure(403, 'ORIGIN_REJECTED', 'Staff changes must come from this site');
   }
   let authorization = request.headers.get('authorization');
@@ -43,10 +45,12 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
       if (size > 16384) { await reader.cancel(); return failure(413, 'BODY_TOO_LARGE', 'Request exceeds 16 KiB'); }
       chunks.push(value);
     }
-    body = new Uint8Array(size);
-    let offset = 0;
-    for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.length; }
-    headers['content-type'] = 'application/json';
+    if (size) {
+      body = new Uint8Array(size);
+      let offset = 0;
+      for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.length; }
+      headers['content-type'] = 'application/json';
+    }
   }
   const upstream = new URL(`/${path}`, process.env.GATEWAY_URL || 'http://localhost:8080');
   if (path === 'v1/menu') upstream.searchParams.set('tableCode', url.searchParams.get('tableCode') ?? '');

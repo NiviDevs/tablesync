@@ -114,7 +114,7 @@ The original checkout remains on `main`; B-owned files are untouched.
   new images; B must preserve the v2 durable queue/dead-letter setup and avoid
   replacing persisted outbox IDs. Next: P4 kitchen/closure and browser wiring.
 
-## P4 — paused by user for session handoff, 2026-10-17
+## P4 — historical handoff snapshot, 2026-10-17
 
 - Backend kitchen/closure, migration 008, routes, and three passing lifecycle
   integration tests are uncommitted. Web QR dependency installation succeeded.
@@ -124,6 +124,7 @@ The original checkout remains on `main`; B-owned files are untouched.
 
 ## P4 — complete, 2026-10-17
 
+- Commit: `b8fc4b7` (`feat: connect guest and kitchen screens to services`).
 - Preserved and finished the handoff's kitchen/closure backend and migration 008.
 - Guest and restaurant pages now use the allowlisted same-origin service proxy;
   no active product import uses the Supabase demo helper. Staff identity helpers
@@ -138,3 +139,36 @@ The original checkout remains on `main`; B-owned files are untouched.
   verify the complete browser journey and access boundary on isolated data.
 - Limitations: live Supabase sign-in, phone QR access, menu editing, business
   analytics and B's Ops/cluster integration are not verified by P4.
+
+## P5 — complete, 2026-10-17
+
+- Commit: this P5 commit (`test: verify the service-backed restaurant journey`).
+- Added Playwright, a local generated-key staff identity, and an isolated harness
+  running the actual gateway, Session, Order, Payment and production web server.
+  It uses a unique schema in the disposable database and a unique RabbitMQ vhost.
+- Final results: all workspace tests pass; all 23 PostgreSQL integration tests
+  pass; typecheck and production build pass; all 3 browser tests pass (31.4 s);
+  `git diff --check` passes. CI includes browser installation/build/tests but has
+  not been run remotely. See [reproduction commands](P5-TESTING.md).
+- Browser evidence: independent guests share updates within three seconds,
+  edit only their own lines, and submit one table-level simulated order. A lost
+  HTTP reply and refresh during a real Payment-process outage preserve checkout
+  identity. One persisted order survives an actual Order-process restart.
+  Staff progress through preparing/ready/served, close the seating, and the next
+  join receives a new session ID. QR data is generated locally.
+- Access evidence: anonymous and guest staff calls, foreign session credentials,
+  expired guest tokens, ordinary staff Ops access, forged internal headers,
+  cross-origin mutation, oversized bodies and non-allowlisted routes are rejected.
+  Unknown-table reads preserve row counts. Injected dependency failure shows
+  stale state and recovers after refresh. Browser artifacts are ignored by Git.
+- Browser tests exposed and fixed two web proxy bugs: Origin must compare with
+  the public Host rather than Next's internal bind hostname; empty POST streams
+  must not acquire a JSON content type. Tests also corrected fixture module mode,
+  accessibility selectors and the required name entry for a new seating.
+- Running Compose project `tablesync-role-a-f0` rebuilt successfully at P4,
+  migration 008 applied, and side-effect-free gateway service smoke passed.
+  No application volume was deleted; no B-owned file changed. Main remains main.
+- Limits: Supabase email/callback/cookie refresh and real phone/tunnel access are
+  unverified. Test credentials are temporary and do not configure normal staff
+  sign-in. The seeded menu remains read-only; dish editing and daily analytics
+  are not implemented. Ops/telemetry/scaling stay with B; F2 is still joint work.

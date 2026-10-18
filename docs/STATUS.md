@@ -8,11 +8,11 @@ Baseline: 2026-10-16. No runtime verification was performed during the documenta
 | Approved design and detailed execution plans | Documentation written; implementation pending | User approved the spec on 2026-10-16. Shared, product, and infrastructure plans await execution-plan review. |
 | F0 development checks | Verified locally | Node 22.23.3/npm 10.9.9 clean install, unit/contract tests, typecheck, production build, image builds, and isolated Compose/service smoke passed on 2026-10-17. See [Role A progress](progress/A.md). |
 | F1 contracts and migrations | Verified locally | HTTP contract defined for callers; six real-PostgreSQL migration tests pass. Isolated F0 backup/baseline/repeat and post-migration service smoke pass. Product routes and v2 producers remain P1–P4 work. |
-| Browser demo | Implemented, unverified | Supabase helpers and screens exist. Run the complete multi-browser flow against an identified database. |
+| Browser product | Service-backed | Guest, tables and kitchen now use the gateway through the web proxy. See P4/P5 evidence below. |
 | Service slice | Implemented, unverified | Compose and service source exist. Rerun tests and persistence/checkout smoke checks. |
-| Staff and guest authorization | Proposed | Existing OTP plumbing and presentation policies do not satisfy the spec. |
-| One authoritative browser/API path | Backend ready; UI pending P4 | P1–P3 table/cart/checkout APIs pass local tests; browser still uses Supabase. |
-| Checkout and kitchen correctness | Checkout verified locally; kitchen pending P4 | Nineteen integration tests and actual Compose checkout delivery pass. |
+| Staff and guest authorization | Verified with local test identities | Scoped guest JWTs, staff membership, origin and internal-header checks pass. Live Supabase sign-in remains unverified. |
+| One authoritative browser/API path | Implemented | Guest and restaurant business calls use the services. Supabase is retained for staff identity only. |
+| Checkout and kitchen correctness | Verified locally | Twenty-three PostgreSQL integration tests pass, including lifecycle and closure races. |
 | Kubernetes deployment | Proposed | No manifests or verified cluster. |
 | Prometheus/Grafana/Ops | Proposed | Preview UI and limited service metrics only. |
 | HPA and k6 evidence | Proposed | Existing k6 asset checks health only. |
@@ -133,3 +133,20 @@ Keep evidence small and reproducible. Do not commit credentials, customer data, 
 - Migration 008 applied additively to the synthetic Compose database.
 - Full browser/access verification is P5. Live identity, phones, menu editing,
   business analytics and infrastructure integration remain outside this evidence.
+
+## P5 browser and access evidence — 2026-10-17
+
+- Work package: P5 on `feat/product-integration`, following P4 `b8fc4b7`.
+- Environment: local Linux, Node 22.23.3/npm 10.9.9, PostgreSQL/Redis/RabbitMQ
+  from the existing isolated Compose project; production Next.js and Chromium.
+- Results: workspace tests pass; 23 PostgreSQL integration tests pass;
+  typecheck/build pass; 3 Playwright tests pass in 31.4 seconds; diff check passes.
+- Actual service processes verify lost-response recovery, pending refresh,
+  Payment restart, Order restart persistence, one order, kitchen progression,
+  closure and distinct subsequent seating. Shared UI updates meet the tested
+  three-second bound. Local generated-key identities verify access boundaries.
+- Fixed proxy public-origin comparison and empty-POST forwarding based on the
+  browser failures. Runtime Compose rebuild and gateway smoke also pass.
+- [Commands and test isolation](progress/P5-TESTING.md). Remote CI is configured,
+  not executed. Live Supabase sign-in, phone/tunnel and B/F2 infrastructure
+  integration remain unverified. Dish editing and daily analytics remain absent.

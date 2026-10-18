@@ -1,4 +1,6 @@
-> Historical handoff: P4/P5 continuation results are recorded in [A.md](A.md).
+> Historical handoff, superseded: P4 (`b8fc4b7`) and P5 are complete.
+> Current results and limits are in [A.md](A.md); commands are in [P5-TESTING.md](P5-TESTING.md).
+> Compose now runs the rebuilt P4 services with migration 008. The original notes below describe the earlier state.
 
 # Role A session handoff — 2026-10-17
 
