@@ -32,5 +32,20 @@ npm run demo:logs     # Read service errors
 - [Current features and limits](docs/STATUS.md)
 - [Cloud setup](infra/k8s/README.md)
 
-The Kubernetes demo uses the same app with Prometheus, Grafana and live Ops
-metrics. Local Kubernetes runs on your computer, not hosted cloud compute.
+## Run the cloud presentation
+
+On this Linux machine, run:
+
+```bash
+npm run cloud
+```
+
+This stops the local Compose app to free ports, starts the Minikube app and
+monitoring, and opens web/Grafana port-forwarding. Keep the terminal open.
+The first cloud start can take several minutes. Later, use `npm run cloud:open`
+to reopen the running cluster without rebuilding, or `npm run cloud:stop` to
+stop it while preserving data.
+
+Minikube/kubectl are downloaded automatically on Linux x86_64 when missing.
+Allow at least 6 GiB for the cluster. Local Kubernetes runs on your computer,
+not hosted cloud compute. [Cloud details](infra/k8s/README.md).

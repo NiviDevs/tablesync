@@ -6,6 +6,9 @@
   "engines": { "node": "22.23.3", "npm": "10.9.9" },
   "workspaces": ["apps/*", "services/*", "packages/*"],
   "scripts": {
+    "cloud": "bash scripts/cloud.sh",
+    "cloud:open": "bash scripts/cloud.sh open",
+    "cloud:stop": "bash scripts/cloud.sh stop",
     "demo": "node scripts/demo.mjs",
     "demo:stop": "node scripts/demo.mjs stop",
     "demo:logs": "node scripts/demo.mjs logs",

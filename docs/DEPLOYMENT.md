@@ -58,8 +58,14 @@ the operator demo login.
 
 ## Kubernetes version
 
-Follow [the cloud guide](../infra/k8s/README.md). Stop Compose before forwarding
-the cluster web service to port 3000. Compose and Minikube have separate databases.
+Run `npm run cloud` on this Linux machine. It stops Compose to free ports,
+starts the cluster app/monitoring, and forwards web 3000 and Grafana 3001. Keep
+that terminal open. Ctrl+C closes forwarding but leaves the cluster running.
+
+`npm run cloud:open` reopens a running cluster without rebuilding.
+`npm run cloud:stop` stops Minikube and preserves data. Full details are in
+[the cloud guide](../infra/k8s/README.md). Compose and Minikube have separate
+databases. For different browser ports, use `WEB_PORT=3002 GRAFANA_PORT=3003 npm run cloud:open`.
 
 Demo role selection is explicitly enabled for this educational environment.
 Other deployments retain the existing Supabase/JWKS configuration. These demo

@@ -11,3 +11,6 @@ playwright-report
 !.env.example
 
 **/.local
+
+.codegraph/
+.projectmem/
