@@ -125,3 +125,25 @@ Original main and A's worktree remain untouched.
 - Peer-message tool now rejects outgoing coordination with `approval policy is
   never`; exact integration requests are recorded here for A. No shared A files
   are edited by B after A's latest boundary request.
+
+## Final functional handoff — identity/tools/HPA/load
+
+- Commit: this focused completion commit (`feat: finish local cloud sign-in and scaling controls`).
+- Cluster now uses A's private opt-in JWT issuer, generated persisted RSA JWK,
+  owner/operator assignments and httpOnly web sign-in. A source `fc1bfa3` is
+  cherry-picked as `b23d909`; A Ops hook `e8f2930` is integrated as `b0f5dd1`.
+  Shared cherry-pick conflicts use A's exact committed package/docs/cloud files.
+- Bootstrap finds/downloads pinned tools with checksum verification into ignored
+  `.local/bin`. No hidden /tmp PATH prerequisite remains. A's `npm run cloud`
+  wrapper can source `tools.sh` and use the existing deployment names.
+- Ops hides an empty Grafana URL in local Compose; cloud links the real dashboard.
+- HPA: `infra/k8s/session-hpa.yaml`; min 1/max 3, 60% CPU, 300-second scale-down
+  stabilization, one removed pod per 60 seconds. Only Session scales.
+- Read load: `RATE=100 DURATION=180s bash infra/k6/run.sh`; default includes 360s
+  cooldown and real five-second metric/HPA/pod capture. Short demo observation:
+  `RATE=100 DURATION=20s COOLDOWN=5s bash infra/k6/run.sh`.
+- No full C5 measurement, scale-down or traffic-distribution claim yet. User
+  deadline takes precedence over calibration/repeated tests. Cart correctness
+  script is optional and not executed; prior A product evidence remains separate.
+- Final cluster rollout and one short observation are the only remaining runtime
+  work. A owns main merge and cleaned shared runbooks; B never merges main.

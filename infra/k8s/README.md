@@ -3,7 +3,8 @@
 This deploys the actual service application to the private `tablesync` Minikube
 profile. It does not provision hosted compute. Payments are simulated.
 
-Prerequisites: Docker daemon access, Bash, Python 3, Git, Minikube and kubectl.
+Prerequisites: Docker daemon access, Bash, Node.js, Python 3, Git, curl and sha256sum.
+Bootstrap finds or downloads checksum-verified pinned Minikube/kubectl into ignored `.local/bin`.
 Use the versions in `versions.env`. Verify downloaded binaries against their
 published SHA-256 checksums. Keep at least 6 GiB available for the cluster and
 capacity for the host browser and load generator.
@@ -57,3 +58,9 @@ minikube stop -p tablesync
 
 Runtime evidence and measured limits are recorded in `docs/progress/B.md`.
 Manifests alone do not establish successful deployment, persistence or scaling.
+
+Local demo sign-in uses A’s opt-in private JWT issuer and httpOnly cookie.
+Owner and operator buttons need no Supabase account. This cluster configuration
+is for a local educational demo. Keep the web forward on loopback. To use real
+Supabase identity instead, disable demo mode and configure matching build-time
+public settings and server-side staff membership.

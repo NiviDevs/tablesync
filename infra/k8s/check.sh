@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(dirname "$0")/tools.sh"
 k=(kubectl --context=tablesync -n tablesync)
-for target in statefulset/postgres statefulset/rabbitmq deployment/redis deployment/session deployment/order deployment/payment deployment/api-gateway deployment/web; do
+for target in statefulset/postgres statefulset/rabbitmq deployment/redis deployment/session deployment/order deployment/payment deployment/api-gateway deployment/web deployment/demo-identity; do
   "${k[@]}" rollout status "$target" --timeout=240s
 done
 [[ -n "${IMAGE_TAG:-}" ]] || { echo 'Set IMAGE_TAG to the deployed revision' >&2; exit 1; }

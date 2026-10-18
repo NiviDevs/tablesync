@@ -5,7 +5,7 @@ import { loadOverview, type MetricValue, type OpsOverview } from '@/lib/ops';
 
 function Metric({ sample, format, clock }: { sample: MetricValue; format?: (value: number) => string; clock: number }) {
   const state = sample.state === 'fresh' && sample.sampleAt && clock - Date.parse(sample.sampleAt) > 45000 ? 'stale' : sample.state;
-  return <><strong>{sample.value === null ? '—' : format ? format(sample.value) : sample.value.toLocaleString()}</strong><small className={state === 'fresh' ? '' : 'warning'}>{state}{sample.sampleAt && <> · <time dateTime={sample.sampleAt}>{new Date(sample.sampleAt).toLocaleTimeString()}</time></>}</small></>;
+  return <><strong style={{ display: 'block' }}>{sample.value === null ? '—' : format ? format(sample.value) : sample.value.toLocaleString()}</strong><small style={{ display: 'block' }} className={state === 'fresh' ? '' : 'warning'}>{state}{sample.sampleAt && <> · <time dateTime={sample.sampleAt}>{new Date(sample.sampleAt).toLocaleTimeString()}</time></>}</small></>;
 }
 const decimal = (value: number) => value.toFixed(2);
 export default function Ops() {
@@ -35,6 +35,6 @@ export default function Ops() {
       ['Active seating sessions', overview.session.activeSeatingSessions, undefined],
     ] as [string, MetricValue, ((value: number) => string) | undefined][]).map(([label, sample, format]) => <div className="stat" key={label}><span className="eyebrow">{label}</span><Metric sample={sample} clock={clock} format={format} /></div>)}</section>
     <p>Samples older than 45 seconds are stale. Missing sources are unavailable. Zero traffic can leave latency/error fractions unavailable.</p>
-    <p><a href={overview.grafanaUrl} target="_blank" rel="noreferrer">Open detailed Grafana dashboards</a> · fetched <time dateTime={overview.fetchedAt}>{new Date(overview.fetchedAt).toLocaleTimeString()}</time></p></>}
+    <p>{overview.grafanaUrl ? <a href={overview.grafanaUrl} target="_blank" rel="noreferrer">Open detailed Grafana dashboards</a> : 'Grafana is available in cloud mode'} · fetched <time dateTime={overview.fetchedAt}>{new Date(overview.fetchedAt).toLocaleTimeString()}</time></p></>}
   </div></main>;
 }

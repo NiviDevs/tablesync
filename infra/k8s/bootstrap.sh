@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-source infra/k8s/versions.env
+source infra/k8s/tools.sh
 : "${IMAGE_TAG:=$(git rev-parse --short=12 HEAD)}"
 [[ "$IMAGE_TAG" =~ ^[a-f0-9]{7,40}$ ]] || { echo 'IMAGE_TAG must be a lowercase Git revision (7–40 hex digits)' >&2; exit 1; }
 export IMAGE_TAG
@@ -20,6 +20,17 @@ with open(os.open(os.environ['SECRET_FILE'], os.O_WRONLY | os.O_CREAT | os.O_EXC
     f.writelines(f'{key}={value}\n' for key, value in values.items())
 PY
 fi
+node --input-type=module - "$secret_file" <<'JS'
+import { readFileSync, writeFileSync } from 'node:fs';
+import { generateKeyPairSync } from 'node:crypto';
+const file = process.argv[2];
+const settings = readFileSync(file, 'utf8');
+if (!/^DEMO_JWT_PRIVATE_JWK=.+$/m.test(settings)) {
+  const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const line = `DEMO_JWT_PRIVATE_JWK=${JSON.stringify(privateKey.export({ format: 'jwk' }))}`;
+  writeFileSync(file, /^DEMO_JWT_PRIVATE_JWK=/m.test(settings) ? settings.replace(/^DEMO_JWT_PRIVATE_JWK=.*$/m, line) : settings + line + '\n', { mode: 0o600 });
+}
+JS
 if grep -q 'replace-with-' "$secret_file"; then echo 'Replace secret placeholders before bootstrap' >&2; exit 1; fi
 if ! minikube -p tablesync status >/dev/null 2>&1; then
   minikube start -p tablesync --driver=docker --cpus=4 --memory=6144 --kubernetes-version="$KUBERNETES_VERSION"
@@ -32,8 +43,8 @@ kubectl --context=tablesync -n tablesync create secret generic tablesync-secrets
   kubectl --context=tablesync -n tablesync apply -f -
 for app in api-gateway session order payment web; do
   docker build -f "$( [[ "$app" == web ]] && echo apps/web || echo services/"$app" )/Dockerfile" \
-    --build-arg NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://build-only.supabase.co}" \
-    --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-build-only-placeholder}" \
+    --build-arg NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL-}" \
+    --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY-}" \
     -t "tablesync/$app:$IMAGE_TAG" .
   minikube -p tablesync image load "tablesync/$app:$IMAGE_TAG"
 done
@@ -44,12 +55,12 @@ done
 rendered=$(mktemp -d)
 trap 'rm -rf "$rendered"' EXIT
 cp infra/k8s/base/*.yaml "$rendered/"
-sed -i "s|:dev|:$IMAGE_TAG|g; s|migrate-dev|migrate-${IMAGE_TAG,,}|g" "$rendered/applications.yaml" "$rendered/migrate-job.yaml"
+sed -i "s|:dev|:$IMAGE_TAG|g; s|migrate-dev|migrate-${IMAGE_TAG,,}|g" "$rendered/applications.yaml" "$rendered/migrate-job.yaml" "$rendered/demo-identity.yaml"
 kubectl --context=tablesync -n tablesync apply -f "$rendered/migrate-job.yaml"
 kubectl --context=tablesync -n tablesync wait --for=condition=complete "job/migrate-${IMAGE_TAG,,}" --timeout=180s || {
   kubectl --context=tablesync -n tablesync logs "job/migrate-${IMAGE_TAG,,}"; exit 1;
 }
 # Server dry-run validates every rendered resource before application rollout.
 kubectl --context=tablesync apply --dry-run=server -k "$rendered"
-kubectl --context=tablesync -n tablesync apply -f "$rendered/applications.yaml"
+kubectl --context=tablesync -n tablesync apply -f "$rendered/demo-identity.yaml" -f "$rendered/applications.yaml"
 bash infra/k8s/check.sh
