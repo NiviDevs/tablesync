@@ -2,6 +2,7 @@
 
 Start with the root [README](../README.md). No old plans are needed to run it.
 
+- [Completed work, technology and enforced product rules](FEATURES.md)
 - [Run locally and fix startup](DEPLOYMENT.md)
 - [Presentation walkthrough](DEMO.md)
 - [Architecture](ARCHITECTURE.md)
