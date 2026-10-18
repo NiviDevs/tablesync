@@ -1,0 +1,46 @@
+deployment "prometheus" successfully rolled out
+deployment "grafana" successfully rolled out
+deployment "kube-state-metrics" successfully rolled out
+Checking /etc/prometheus/prometheus.yml
+ SUCCESS: /etc/prometheus/prometheus.yml is valid prometheus config file syntax
+
+{
+  "checkedAt": "2026-10-18T07:36:38.646Z",
+  "targets": [
+    {
+      "job": "kube-state-metrics",
+      "service": "kube-state-metrics",
+      "health": "up"
+    },
+    {
+      "job": "kubelet-cadvisor",
+      "health": "up"
+    },
+    {
+      "job": "rabbitmq",
+      "service": "rabbitmq",
+      "health": "up"
+    },
+    {
+      "job": "tablesync-applications",
+      "service": "session",
+      "health": "up"
+    },
+    {
+      "job": "tablesync-applications",
+      "service": "api-gateway",
+      "health": "up"
+    },
+    {
+      "job": "tablesync-applications",
+      "service": "order",
+      "health": "up"
+    },
+    {
+      "job": "tablesync-applications",
+      "service": "payment",
+      "health": "up"
+    }
+  ],
+  "metricFamilies": 348
+}
