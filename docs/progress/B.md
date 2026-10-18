@@ -147,3 +147,12 @@ Original main and A's worktree remain untouched.
   script is optional and not executed; prior A product evidence remains separate.
 - Final cluster rollout and one short observation are the only remaining runtime
   work. A owns main merge and cleaned shared runbooks; B never merges main.
+
+## Ops deadline correction
+
+- Final review found service and Session query batches ran sequentially, allowing
+  two 2.5-second deadlines. They now run concurrently, keeping source failure
+  within one 2.5-second deadline and below the web proxy timeout.
+- This is the only source correction after the `1789319` handoff; A should include
+  this follow-up commit. The in-flight cluster build still uses the exact
+  `1789319fc911` image source; gateway alone will receive the corrected image.

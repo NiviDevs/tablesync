@@ -32,7 +32,7 @@ export function createOpsReader({ prometheusUrl, fetch = globalThis.fetch, now =
   }
   async function load() {
     const result = { environment, fetchedAt: new Date(now()).toISOString(), services: [], session: {}, grafanaUrl };
-    result.services = await Promise.all(services.map(async name => {
+    const serviceSamples = Promise.all(services.map(async name => {
       const selector = `tablesync_http_requests_total{service="${name}"}`;
       const rate = `sum(rate(${selector}[1m]))`;
       const [health, requestsPerSecond, p95Seconds, errorFraction] = await Promise.all([
@@ -47,11 +47,13 @@ export function createOpsReader({ prometheusUrl, fetch = globalThis.fetch, now =
     const ready = 'kube_deployment_status_replicas_available{namespace="tablesync",deployment="session"}';
     const cpu = 'container_cpu_usage_seconds_total{namespace="tablesync",pod=~"session-.*",container="session"}';
     const memory = 'container_memory_working_set_bytes{namespace="tablesync",pod=~"session-.*",container="session"}';
-    const [desiredReplicas, readyReplicas, cpuCores, memoryBytes, activeSeatingSessions] = await Promise.all([
+    const [serviceResults, desiredReplicas, readyReplicas, cpuCores, memoryBytes, activeSeatingSessions] = await Promise.all([
+      serviceSamples,
       metric(`max(${desired})`, sourceTime(desired)), metric(`max(${ready})`, sourceTime(ready)),
       metric(`sum(rate(${cpu}[1m]))`, sourceTime(cpu)), metric(`sum(${memory})`, sourceTime(memory)),
       metric('max(tablesync_active_seating_sessions)', 'max(tablesync_active_seating_sessions_sample_timestamp_seconds)'),
     ]);
+    result.services = serviceResults;
     result.session = { desiredReplicas, readyReplicas, cpuCores, memoryBytes, activeSeatingSessions };
     return result;
   }
