@@ -18,11 +18,19 @@ services:
       retries: 10
   api-gateway:
     environment:
+      PROMETHEUS_URL: http://prometheus:9090
+      OPS_ENVIRONMENT: local-compose
+      GRAFANA_URL: ""
       STAFF_JWT_ISSUER: http://demo-identity:8084
       STAFF_JWKS_URL: http://demo-identity:8084/jwks
       STAFF_ASSIGNMENTS_JSON: '{"tablesync-demo-owner":{"restaurantId":"00000000-0000-4000-8000-000000000001","roles":["staff"]},"tablesync-demo-operator":{"restaurantId":"00000000-0000-4000-8000-000000000001","roles":["operator"]}}'
     depends_on:
       demo-identity: { condition: service_healthy }
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=1d"]
+    volumes:
+      - ./infra/monitoring/prometheus-compose.yml:/etc/prometheus/prometheus.yml:ro
   web:
     build:
       context: .

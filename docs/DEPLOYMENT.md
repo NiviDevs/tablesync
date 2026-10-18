@@ -1,123 +1,74 @@
-# Development baseline (F0)
+# Run TableSync
 
-Use Node **22.23.3** and npm **10.9.9** (the npm bundled with that Node archive).
-`.nvmrc`, package engines, CI, and the four service Dockerfiles pin this pair.
-With nvm installed, run `nvm install` and `nvm use` from the checkout.
-Verify `node --version` and `npm --version` before installing dependencies.
+## Start
 
-```bash
-npm ci
-npm test
-npm run typecheck
-NEXT_PUBLIC_SUPABASE_URL=https://build-only.supabase.co NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=build-only-placeholder npm run build
-```
+1. Start Docker Desktop or Docker Engine.
+2. Open a terminal in the repository.
+3. Run `npm run demo`.
+4. Wait for `Ready: http://localhost:3000` and open it.
 
-The build placeholders are public synthetic strings for prerendering the legacy
-Supabase browser demo. They do not configure a working sign-in or database. For
-interactive browser use, supply the actual public settings described in
-`.env.example` through `apps/web/.env.local`; never commit credentials.
-No secrets or live identity-provider connection are needed for the CI checks.
-Production builds perform normal Next.js TypeScript checking. The unsupported
-`next lint` script has been removed; lint is not a verified gate until an ESLint
-configuration is introduced.
+The launcher builds the app, starts dependencies, applies pending migrations
+and creates ignored local credentials. No Supabase or payment account is needed.
+It reuses a running TableSync Compose project and saves its name in
+`.local/compose-project`. Keep the ignored `.env` file; never commit it.
 
-The current browser still uses the separate Supabase demo. Starting the backend
-does not connect that UI to the services; see [PROJECT_STATE.md](PROJECT_STATE.md).
+## Pages
 
-## Service smoke
+- Guest: `http://localhost:3000/app?table=SAGE-12`
+- Owner/kitchen: `/restaurant/sign-in`, then **Open owner and kitchen**
+- DevOps: the same sign-in page, then **Open DevOps view**
 
-Docker Engine and Docker Compose are required. Set separate random server-only
-`INTERNAL_API_SECRET` and `GUEST_TOKEN_SECRET` values (at least 32 bytes) in the
-ignored root `.env`; never reuse a Supabase key. Staff issuer/JWKS and subject
-assignments are optional for guest-only local development; staff routes deny
-access until configured. Local auth tests use generated signing keys.
+Use separate browser profiles/private windows for owner, operator and guests.
+Changing a demo role replaces that browser's previous staff session. A localhost
+QR works on this computer; phones need a reachable LAN/tunnel web address.
 
-Use a separate Compose project
-for an isolated development baseline. Confirm ports 5432, 6379, 5672, 15672, and
-8080 are free. The existing Compose credentials are local development examples;
-keep the stack private.
+## Stop and resume
 
 ```bash
-docker compose -p tablesync-role-a-f0 up -d --build --wait --wait-timeout 180
-GATEWAY_URL=http://localhost:8080 npm run smoke:services
-docker compose -p tablesync-role-a-f0 stop
+npm run demo:stop
+npm run demo
 ```
 
-The smoke checks gateway health, requires `runtime: services`, and reads
-`/v1/tables/SAGE-12` twice without creating a seating or cart. It does not yet
-establish checkout correctness or persistence across restarts. Before starting
-new P1 services against an existing F0 volume, run the F1 migration procedure
-below to apply 004. Empty databases also need the runner after PostgreSQL starts.
-`stop` preserves volumes and containers. Do not delete database volumes to reset
-the application. Existing non-disposable volumes require a backup and schema
-inspection before the F1 migration baseline.
+Stopping keeps orders and volumes. Do not use `docker compose down -v` to stop.
+Older databases are backed up into `.local/backups` before their first migration
+baseline. Startup does not erase them.
 
-On the assessment host, Docker group changes did not update the already running
-IDE process. A new shell using `newgrp docker` picked up the account's assigned
-group. Restarting the IDE after a group change is another way to refresh it.
+## Common problems
 
-## Service migrations (F1)
+**Docker connection:** start Docker Desktop/Engine and retry. Linux users who
+already belong to the Docker group get a group refresh automatically. Otherwise
+fix Docker group access and restart the terminal/IDE.
 
-`npm run db:migrate` uses server-only `DATABASE_URL` and optionally
-`MIGRATIONS_DIR` (default `infra/postgres/migrations`). It serializes runners with
-a PostgreSQL advisory lock, applies each SQL file in a transaction, and stores
-filename/SHA-256 in `schema_migrations`. Missing or modified applied files and
-out-of-order additions fail before further SQL. The process exits nonzero on
-failure. It never deletes data to obtain a clean schema.
+**Port already in use:** stop the old app or port-forward using port 3000, 8080,
+5432, 6379, 5672 or 15672. Preserve database volumes.
 
-On an empty service database:
+**Download/build failure:** check internet access and rerun `npm run demo`.
+Completed image layers are reused.
 
-```bash
-DATABASE_URL=postgresql://tablesync:tablesync@localhost:5432/tablesync npm run db:migrate
-```
+**Expired guest/closed seating:** choose **Rejoin table** or open a new private
+window. Serve orders before closing a seating.
 
-`001-initial-schema.sql` is a byte-for-byte copy of the preserved `init.sql`.
-Existing `002`/`003` remain unchanged and run idempotently after 001. Supabase SQL
-is a separate history; do not point this runner at its directory/database or
-rename its duplicate migration versions.
+**Empty business dashboard:** mark the order preparing, ready, then served in
+the kitchen. Analytics count SERVED orders; select today's date.
 
-Existing Compose volumes already initialized by `init.sql` need an explicit
-baseline. First stop product writes, capture a revision/schema inventory, back
-up the intended database to a private path outside Git, and verify the dump.
-For the isolated synthetic F0 stack the following backup/baseline was tested:
+**Owner access denied:** visit `/restaurant/sign-in` and choose owner. Ops needs
+the operator demo login.
 
-```bash
-docker compose -p tablesync-role-a-f0 exec -T postgres pg_dump -U tablesync --no-owner --no-acl tablesync > /tmp/tablesync-f0-pre-migrations.sql
-# Inspect the dump and current database before acknowledging the backup.
-DATABASE_URL=postgresql://tablesync:tablesync@localhost:5432/tablesync BASELINE_BACKUP_CONFIRMED=yes npm run db:migrate -- --baseline
-DATABASE_URL=postgresql://tablesync:tablesync@localhost:5432/tablesync npm run db:migrate
-npm run smoke:services
-```
+**Other errors:** run `npm run demo:logs`. Ctrl+C stops following logs.
 
-The baseline command compares existing columns/defaults and constraints with
-the original schema in a transactional inspection schema before recording 001;
-it rejects drift and requires `BASELINE_BACKUP_CONFIRMED=yes`. It does not verify
-a backup's restorability for you. The acknowledgement is only for that one
-invocation. Normal subsequent runs omit `--baseline`. Schema drift requires
-inspection and an agreed additive repair; do not edit already applied SQL or
-force ledger entries. A baseline of a real database is separate operator work,
-not authorized by the synthetic database test.
+## Kubernetes version
 
-Run the migration integration suite only against an explicitly disposable
-database with `test` as a name component:
+Run `npm run cloud` on this Linux machine. It stops Compose to free ports,
+starts the cluster app/monitoring, and forwards web 3000 and Grafana 3001. Keep
+that terminal open. Ctrl+C closes forwarding but leaves the cluster running.
 
-```bash
-TEST_DATABASE_URL=postgresql://tablesync:tablesync@localhost:5432/tablesync_test_foundation npm run test:migrations
-```
+`npm run cloud:open` reopens a running cluster without rebuilding.
+Grafana uses username **operator**. Run `npm run cloud:password` in another
+terminal to display its generated local password.
+`npm run cloud:stop` stops Minikube and preserves data. Full details are in
+[the cloud guide](../infra/k8s/README.md). Compose and Minikube have separate
+databases. For different browser ports, use `WEB_PORT=3002 GRAFANA_PORT=3003 npm run cloud:open`.
 
-Tests create unique temporary schemas and remove only those schemas. They check
-repeat/concurrent application, checksum rejection, SQL rollback, and safe
-existing-schema baselining. They do not erase the default application database.
-
-Rollback is an application revision rollback only while the additive schema
-remains compatible. Applied migrations/checksums remain in place. There are no
-automatic down migrations. Future data conversions require an owner-reviewed
-backup/restore procedure; retaining old columns is not proof of a tested restore.
-
-## Remaining deployment gates
-
-Kubernetes, public access, and a complete restaurant journey still require
-verification under P1–P5, C1–C5, and F2. Exact checks and current
-blockers are recorded in [STATUS.md](STATUS.md) and [Role A progress](progress/A.md).
-
-[Previous deployment notes](archive/2026-10-16/DEPLOYMENT.md) are historical and contain stale claims. Never run database volume deletion as a routine migration or reset.
+Demo role selection is explicitly enabled for this educational environment.
+Other deployments retain the existing Supabase/JWKS configuration. These demo
+logins are not a public production sign-in system.

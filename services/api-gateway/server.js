@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { authFromEnvironment } from './src/auth.js';
 import { registerProductRoutes } from './src/routes.js';
+import { createOpsReader, registerOpsRoutes } from './src/ops.js';
 
 const runtime = process.env.TABLESYNC_RUNTIME ?? 'local-demo';
 const sessionUrl = process.env.SESSION_SERVICE_URL ?? 'http://localhost:8081';
@@ -52,6 +53,7 @@ export function buildApp(options = {}) {
     registerProductRoutes(app, { auth: options.auth ?? authFromEnvironment(),
       internalSecret: options.internalSecret ?? process.env.INTERNAL_API_SECRET,
       sessionUrl, orderUrl, ...options });
+    registerOpsRoutes(app, { reader: createOpsReader({ prometheusUrl: process.env.PROMETHEUS_URL, grafanaUrl: process.env.GRAFANA_URL }) });
     return app;
   }
   const rooms = new Map(); app.register(websocket);
