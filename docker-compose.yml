@@ -31,7 +31,9 @@ services:
       timeout: 5s
       retries: 10
   session:
-    build: ./services/session
+    build:
+      context: .
+      dockerfile: services/session/Dockerfile
     environment:
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
       ORDER_SERVICE_URL: http://order:8082
@@ -48,7 +50,9 @@ services:
       timeout: 3s
       retries: 10
   order:
-    build: ./services/order
+    build:
+      context: .
+      dockerfile: services/order/Dockerfile
     environment:
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
       DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
@@ -65,7 +69,9 @@ services:
       timeout: 3s
       retries: 10
   payment:
-    build: ./services/payment
+    build:
+      context: .
+      dockerfile: services/payment/Dockerfile
     environment:
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
       DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
@@ -79,7 +85,9 @@ services:
       timeout: 3s
       retries: 10
   api-gateway:
-    build: ./services/api-gateway
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
     environment:
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
       GUEST_TOKEN_SECRET: ${GUEST_TOKEN_SECRET:?Set a dedicated GUEST_TOKEN_SECRET}
