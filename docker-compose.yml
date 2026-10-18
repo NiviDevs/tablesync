@@ -8,7 +8,6 @@ services:
     ports: ["5432:5432"]
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tablesync -d tablesync"]
       interval: 5s
@@ -31,8 +30,12 @@ services:
       timeout: 5s
       retries: 10
   session:
-    build: ./services/session
+    build:
+      context: .
+      dockerfile: services/session/Dockerfile
     environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
+      ORDER_SERVICE_URL: http://order:8082
       DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
@@ -46,11 +49,15 @@ services:
       timeout: 3s
       retries: 10
   order:
-    build: ./services/order
+    build:
+      context: .
+      dockerfile: services/order/Dockerfile
     environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
       DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
       SESSION_SERVICE_URL: http://session:8081
+      PAYMENT_SERVICE_URL: http://payment:8083
     depends_on:
       postgres: { condition: service_healthy }
       session: { condition: service_healthy }
@@ -61,8 +68,11 @@ services:
       timeout: 3s
       retries: 10
   payment:
-    build: ./services/payment
+    build:
+      context: .
+      dockerfile: services/payment/Dockerfile
     environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
       DATABASE_URL: postgresql://tablesync:tablesync@postgres:5432/tablesync
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
@@ -74,8 +84,16 @@ services:
       timeout: 3s
       retries: 10
   api-gateway:
-    build: ./services/api-gateway
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
     environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?Set a server-only INTERNAL_API_SECRET}
+      GUEST_TOKEN_SECRET: ${GUEST_TOKEN_SECRET:?Set a dedicated GUEST_TOKEN_SECRET}
+      STAFF_JWT_ISSUER: ${STAFF_JWT_ISSUER:-}
+      STAFF_JWT_AUDIENCE: ${STAFF_JWT_AUDIENCE:-authenticated}
+      STAFF_JWKS_URL: ${STAFF_JWKS_URL:-}
+      STAFF_ASSIGNMENTS_JSON: ${STAFF_ASSIGNMENTS_JSON:-}
       TABLESYNC_RUNTIME: services
       SESSION_SERVICE_URL: http://session:8081
       ORDER_SERVICE_URL: http://order:8082

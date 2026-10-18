@@ -1,0 +1,53 @@
+# Local educational demo. The identity issuer stays on the private Docker network.
+services:
+  demo-identity:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    command: ["node", "services/api-gateway/demo-identity.js"]
+    environment:
+      TABLESYNC_DEMO_ENABLED: "true"
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      DEMO_JWT_PRIVATE_JWK: ${DEMO_JWT_PRIVATE_JWK:?Run npm run demo first}
+      STAFF_JWT_ISSUER: http://demo-identity:8084
+      PORT: "8084"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8084/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  api-gateway:
+    environment:
+      PROMETHEUS_URL: http://prometheus:9090
+      OPS_ENVIRONMENT: local-compose
+      GRAFANA_URL: ""
+      STAFF_JWT_ISSUER: http://demo-identity:8084
+      STAFF_JWKS_URL: http://demo-identity:8084/jwks
+      STAFF_ASSIGNMENTS_JSON: '{"tablesync-demo-owner":{"restaurantId":"00000000-0000-4000-8000-000000000001","roles":["staff"]},"tablesync-demo-operator":{"restaurantId":"00000000-0000-4000-8000-000000000001","roles":["operator"]}}'
+    depends_on:
+      demo-identity: { condition: service_healthy }
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=1d"]
+    volumes:
+      - ./infra/monitoring/prometheus-compose.yml:/etc/prometheus/prometheus.yml:ro
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ""
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ""
+    environment:
+      GATEWAY_URL: http://api-gateway:8080
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      TABLESYNC_DEMO_ENABLED: "true"
+      TABLESYNC_DEMO_IDENTITY_URL: http://demo-identity:8084
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      api-gateway: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

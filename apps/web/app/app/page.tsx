@@ -1,24 +1,134 @@
 "use client";
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { addToCart, findOpenSession, joinTable, loadSession, loadTable, payForGuest, placeOrder, type CartItem, type DemoSession, type Guest, type GuestPayment, type MenuItem } from '@/lib/demo';
+import { useEffect, useRef, useState } from 'react';
+import { api, ApiFailure, money, type CartView, type CheckoutView, type Menu, type TableView } from '@/lib/api';
+import { usePoll } from '@/lib/use-poll';
+import { GuestCart } from '@/components/guest-cart';
 
-const initials = (name: string) => name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase();
+type Guest = { token: string; sessionId: string; id: string; name: string };
+type Operation = { operationKey: string; expectedRevision: number; checkoutId?: string; retryOf?: string };
 
 export default function Customer() {
-  const [code, setCode] = useState('SAGE-12'); const [restaurant, setRestaurant] = useState(''); const [tableName, setTableName] = useState(''); const [tableId, setTableId] = useState(''); const [menu, setMenu] = useState<MenuItem[]>([]); const [session, setSession] = useState<DemoSession | null>(null); const [guest, setGuest] = useState<Guest | null>(null); const [guests, setGuests] = useState<Guest[]>([]); const [cart, setCart] = useState<CartItem[]>([]); const [payments, setPayments] = useState<GuestPayment[]>([]); const [name, setName] = useState(''); const [phone, setPhone] = useState(''); const [needsPhone, setNeedsPhone] = useState(false); const [error, setError] = useState(''); const [loading, setLoading] = useState(true); const [adding, setAdding] = useState<string | null>(null); const [checkoutOpen, setCheckoutOpen] = useState(false); const [paying, setPaying] = useState(false);
-  useEffect(() => { const next = new URLSearchParams(window.location.search).get('table')?.toUpperCase() ?? 'SAGE-12'; setCode(next); loadTable(next).then(async data => { setRestaurant(data.restaurant); setTableName(data.table.display_name); setTableId(data.table.id); setMenu(data.menu); setNeedsPhone(!(await findOpenSession(data.table.id))); }).catch(e => setError(e.message)).finally(() => setLoading(false)); }, []);
-  const refresh = async () => { if (!session) return; const data = await loadSession(session.id); setSession(data.session); setGuests(data.guests); setCart(data.cart); setPayments(data.payments); };
-  useEffect(() => { if (!session) return; refresh(); const id = window.setInterval(refresh, 1800); return () => window.clearInterval(id); }, [session?.id]);
-  const join = async () => { if (!name.trim()) return setError('Enter your name to join the table.'); if (needsPhone && phone.trim().length < 7) return setError('The first guest adds a billing contact number.'); try { const joined = await joinTable(tableId, name.trim(), needsPhone ? phone.trim() : undefined); sessionStorage.setItem(`tablesync-demo-${code}`, JSON.stringify({ sessionId: joined.session.id, guest: joined.guest })); setSession(joined.session); setGuest(joined.guest); setNeedsPhone(false); } catch (e) { setError(e instanceof Error ? e.message : 'Could not join the table.'); } };
-  useEffect(() => { if (!tableId || guest) return; const saved = sessionStorage.getItem(`tablesync-demo-${code}`); if (!saved) return; try { const parsed = JSON.parse(saved); setGuest(parsed.guest); loadSession(parsed.sessionId).then(data => { if (data.session?.status === 'OPEN') setSession(data.session); else sessionStorage.removeItem(`tablesync-demo-${code}`); }); } catch { sessionStorage.removeItem(`tablesync-demo-${code}`); } }, [tableId, code, guest]);
-  const add = async (menuItemId: string) => { if (!session || !guest || adding) return; setAdding(menuItemId); const previous = cart; const existing = cart.find(item => item.guest_id === guest.id && item.menu_item_id === menuItemId); setCart(existing ? cart.map(item => item.id === existing.id ? { ...item, quantity: item.quantity + 1 } : item) : [...cart, { id: `local-${menuItemId}`, guest_id: guest.id, menu_item_id: menuItemId, quantity: 1 }]); const { error: addError } = await addToCart(session.id, guest.id, menuItemId); if (addError) { setCart(previous); setError('Could not add that dish. Please try again.'); } else void refresh(); setAdding(null); };
-  const priceFor = (item: CartItem) => (menu.find(dish => dish.id === item.menu_item_id)?.price ?? 0) * item.quantity;
-  const myTotal = useMemo(() => cart.filter(item => item.guest_id === guest?.id).reduce((sum, item) => sum + priceFor(item), 0), [cart, guest, menu]); const total = useMemo(() => cart.reduce((sum, item) => sum + priceFor(item), 0), [cart, menu]);
-  const activeGuests = guests.filter(entry => cart.some(item => item.guest_id === entry.id)); const paidGuestIds = new Set(payments.filter(payment => payment.status === 'PAID').map(payment => payment.guest_id)); const allPayersPaid = activeGuests.length > 0 && activeGuests.every(entry => paidGuestIds.has(entry.id)); const amPaid = !!guest && paidGuestIds.has(guest.id);
-  const pay = async () => { if (!session || !guest) return; setPaying(true); const { error: paymentError } = await payForGuest(session.id, guest.id); if (paymentError) setError(paymentError.message.includes('demo_guest_payments') || paymentError.code === 'PGRST205' ? 'Payment setup is not deployed yet. Apply the latest Supabase migration.' : 'Payment could not be confirmed. Please retry.'); else { setCheckoutOpen(false); await refresh(); } setPaying(false); };
-  if (loading) return <main className="arrival-page"><p>Loading your table…</p></main>;
-  if (!guest || !session) return <main className="arrival-page"><Link className="brand" href="/">table<i>sync</i></Link><section className="arrival-card"><p className="kicker">You&apos;ve arrived</p><h1>{restaurant || 'Your table'}</h1><p className="arrival-table">{tableName} <span>·</span> Shared order</p><div className="arrival-art"><span>✦</span><i>Tonight&apos;s table is waiting</i></div><label htmlFor="guest-name">What should we call you?</label><input id="guest-name" value={name} onChange={e => setName(e.target.value)} placeholder="Your first name" autoFocus />{needsPhone && <><label htmlFor="phone">Billing contact number</label><input id="phone" value={phone} onChange={e => setPhone(e.target.value)} inputMode="tel" placeholder="Only the first guest needs this" /><p className="quiet-note">Only the first guest adds this.</p></>}<button className="primary-button full" onClick={join}>Join the table <span>→</span></button>{error && <p className="form-error">{error}</p>}</section></main>;
-  const placed = session.status !== 'OPEN';
-  return <main className="diner-page"><header className="diner-header"><Link className="brand" href="/">table<i>sync</i></Link><div className="table-live"><span />{placed ? 'Order sent' : 'Live table'}</div></header>{error && <p className="inline-error">{error}</p>}<section className="diner-hero"><div><p className="kicker light">{restaurant} <span>·</span> {tableName}</p><h1>Good evening, {guest.display_name}.</h1><p>{placed ? 'Your table order is with the restaurant.' : `${guests.length} friend${guests.length === 1 ? '' : 's'} joined — everyone orders and pays for their own dishes.`}</p></div><div className="guest-stack">{guests.slice(0, 4).map((entry, i) => <span className={`guest guest-${i}`} title={entry.display_name} key={entry.id}>{initials(entry.display_name)}</span>)}<small>{guests.length} at table</small></div></section><section className="menu-section"><div className="section-heading"><div><p className="kicker">Today&apos;s menu</p><h2>Order at your own pace.</h2></div><span className="menu-note">{placed ? 'Order closed' : 'Tap + to add yours'}</span></div><div className="menu-grid">{menu.map(item => <article className="dish-card" key={item.id}><div className="dish-art">{item.emoji}</div><div className="dish-copy"><h3>{item.name}</h3><p>{item.description}</p></div><strong>₹{item.price}</strong><button className="round-add" disabled={placed || adding === item.id} aria-label={`Add ${item.name}`} onClick={() => add(item.id)}>{adding === item.id ? '…' : '+'}</button></article>)}</div></section><section className="payment-status"><div><p className="kicker">Split payment</p><h2>{placed ? 'Order received by restaurant' : `${paidGuestIds.size}/${activeGuests.length} diners paid`}</h2></div>{activeGuests.map(entry => <p key={entry.id}><span className={paidGuestIds.has(entry.id) ? 'paid-dot' : 'waiting-dot'} />{entry.display_name}{paidGuestIds.has(entry.id) ? ' · paid' : ' · choosing dishes'}</p>)}</section><div className="cart-bar"><div><span>{cart.reduce((n, item) => n + item.quantity, 0)} items in the shared order</span><strong>{myTotal ? `Your dishes · ₹${myTotal}` : `Table total · ₹${total}`}</strong></div>{placed ? <button disabled>Sent to restaurant</button> : myTotal > 0 && !amPaid ? <button onClick={() => setCheckoutOpen(true)}>Pay ₹{myTotal} <span>→</span></button> : guest.is_host ? <button disabled={!allPayersPaid} onClick={async () => { const { error: placeError } = await placeOrder(session.id); if (placeError) setError('Could not send this order.'); await refresh(); }}>{allPayersPaid ? 'Send to restaurant' : 'Waiting for payments'} <span>→</span></button> : <button disabled>{amPaid ? 'Paid · waiting for host' : 'Add your dishes'}</button>}</div><p className="quiet-note center">Simulated demo payment — no money is collected.</p>{checkoutOpen && <div className="checkout-backdrop"><section className="checkout-sheet"><button className="close-sheet" onClick={() => setCheckoutOpen(false)}>×</button><p className="kicker">Your share</p><h2>Ready to pay?</h2><div className="checkout-rows">{cart.filter(item => item.guest_id === guest.id).map(item => <div key={item.id}><span>{item.quantity}× {menu.find(dish => dish.id === item.menu_item_id)?.name}</span><b>₹{priceFor(item)}</b></div>)}</div><div className="checkout-total"><span>Total</span><strong>₹{myTotal}</strong></div><button className="primary-button full" disabled={paying} onClick={pay}>{paying ? 'Confirming payment…' : `Pay ₹${myTotal} (demo)`} <span>→</span></button><p className="quiet-note center">After everyone who ordered has paid, the host sends the table order to the restaurant.</p></section></div>}</main>;
+  const [code, setCode] = useState('');
+  const [table, setTable] = useState<TableView | null>(null);
+  const [menu, setMenu] = useState<Menu['items']>([]);
+  const [guest, setGuest] = useState<Guest | null>(null);
+  const [cart, setCart] = useState<CartView | null>(null);
+  const [checkout, setCheckout] = useState<CheckoutView | null>(null);
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [closed, setClosed] = useState(false);
+  const [expired, setExpired] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const locked = useRef(false);
+  const operationKey = guest ? `tablesync-checkout-${guest.sessionId}` : '';
+  useEffect(() => {
+    const value = (new URLSearchParams(location.search).get('table') ?? 'SAGE-12').toUpperCase();
+    setCode(value);
+    try { const saved = sessionStorage.getItem(`tablesync-guest-${value}`); if (saved) setGuest(JSON.parse(saved)); }
+    catch { sessionStorage.removeItem(`tablesync-guest-${value}`); }
+  }, []);
+  async function recover(operation: Operation, signal?: AbortSignal) {
+    if (!guest) return;
+    const result = operation.checkoutId
+      ? await api<CheckoutView>(`/v1/checkouts/${operation.checkoutId}`, { token: guest.token, signal })
+      : await api<CheckoutView>(operation.retryOf ? `/v1/checkouts/${operation.retryOf}/retry` : `/v1/sessions/${guest.sessionId}/checkouts`, {
+        method: 'POST', token: guest.token, signal, body: operation.retryOf
+          ? { operationKey: operation.operationKey }
+          : { operationKey: operation.operationKey, expectedRevision: operation.expectedRevision },
+      });
+    if (signal?.aborted) return;
+    sessionStorage.setItem(operationKey, JSON.stringify({ ...operation, checkoutId: result.id }));
+    setCheckout(result);
+  }
+  const poll = usePoll(async signal => {
+    if (!code) return;
+    const next = await api<TableView>(`/v1/tables/${encodeURIComponent(code)}`, { signal });
+    setTable(next);
+    const dishes = await api<Menu>(`/v1/menu?tableCode=${encodeURIComponent(code)}`, { signal });
+    setMenu(dishes.items);
+    if (!guest || expired) return;
+    if (next.session?.id !== guest.sessionId) { setClosed(true); return; }
+    try {
+      const latest = await api<CartView>(`/v1/sessions/${guest.sessionId}/cart`, { token: guest.token, signal });
+      // An in-flight poll must not overwrite a successful newer mutation.
+      if (!locked.current) setCart(previous => !previous || latest.revision >= previous.revision ? latest : previous);
+      const saved = sessionStorage.getItem(operationKey);
+      if (saved && !locked.current) await recover(JSON.parse(saved), signal);
+    } catch (cause) {
+      if (cause instanceof ApiFailure && cause.status === 401) setExpired(true);
+      throw cause;
+    }
+  }, `${code}:${guest?.sessionId ?? ''}:${expired}`);
+  async function join() {
+    if (locked.current) return;
+    locked.current = true; setBusy(true); setError('');
+    try {
+      const key = `tablesync-join-${code}`;
+      const saved = sessionStorage.getItem(key);
+      const attempt = saved ? JSON.parse(saved) : { name: name.trim(), joinKey: crypto.randomUUID() };
+      if (attempt.name !== name.trim()) throw new Error('Retry with the same name, or start a new join.');
+      sessionStorage.setItem(key, JSON.stringify(attempt));
+      const joined = await api<{ table: TableView; participant: { id: string; name: string }; guestToken: string }>('/v1/table-sessions/join', {
+        method: 'POST', body: { tableCode: code, ...attempt },
+      });
+      const next = { token: joined.guestToken, sessionId: joined.table.session!.id, ...joined.participant };
+      sessionStorage.setItem(`tablesync-guest-${code}`, JSON.stringify(next));
+      setGuest(next); setTable(joined.table); setClosed(false); setExpired(false); setCart(null); setCheckout(null);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not join'); }
+    finally { locked.current = false; setBusy(false); }
+  }
+  async function change(menuItemId: string, quantity: number) {
+    if (!guest || !cart || locked.current) return;
+    locked.current = true; setBusy(true); setError('');
+    try {
+      const next = await api<CartView>(`/v1/sessions/${guest.sessionId}/cart/items/${encodeURIComponent(menuItemId)}`, {
+        method: quantity ? 'PUT' : 'DELETE', token: guest.token,
+        body: { expectedRevision: cart.revision, ...(quantity ? { quantity } : {}) },
+      });
+      setCart(next);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not update cart'); }
+    finally { locked.current = false; setBusy(false); poll.refresh(); }
+  }
+  async function pay() {
+    if (!guest || !cart || locked.current) return;
+    locked.current = true; setBusy(true); setError('');
+    try {
+      const saved = sessionStorage.getItem(operationKey);
+      const operation: Operation = checkout?.status === 'FAILED'
+        ? { operationKey: crypto.randomUUID(), expectedRevision: cart.revision, retryOf: checkout.id }
+        : saved ? JSON.parse(saved) : { operationKey: crypto.randomUUID(), expectedRevision: cart.revision };
+      sessionStorage.setItem(operationKey, JSON.stringify(operation));
+      await recover(operation);
+    } catch (cause) {
+      if (cause instanceof ApiFailure && cause.code === 'STALE_CART') sessionStorage.removeItem(operationKey);
+      setError(cause instanceof Error ? cause.message : 'Payment reply unavailable. Retry to recover the same attempt.');
+    } finally { locked.current = false; setBusy(false); poll.refresh(); }
+  }
+  function rejoin() {
+    sessionStorage.removeItem(`tablesync-guest-${code}`);
+    sessionStorage.removeItem(`tablesync-join-${code}`);
+    setGuest(null); setCart(null); setCheckout(null); setClosed(false); setExpired(false); setError('');
+  }
+  const notice = <>{(error || poll.error) && <p role="alert" className="inline-error">{error || poll.error} <button onClick={poll.refresh}>Retry refresh</button></p>}{poll.stale && <p role="status">Updates are stale. Showing the last received data.</p>}</>;
+  if (!guest) return <main className="arrival-page"><Link className="brand" href="/">table<i>sync</i></Link><section className="arrival-card">
+    <p className="kicker">Juniper House</p><h1>{table?.name ?? 'Your table'}</h1><p>{code} · Shared order</p>
+    {notice}<label htmlFor="guest-name">What should we call you?</label><input id="guest-name" maxLength={80} value={name} onChange={e => setName(e.target.value)} placeholder="Your first name" />
+    <button className="primary-button full" disabled={busy || !table || !name.trim()} onClick={join}>Join the table</button>
+    {error && <button onClick={() => { sessionStorage.removeItem(`tablesync-join-${code}`); setError(''); }}>Start a new join</button>}
+  </section></main>;
+  if (closed || expired) return <main className="arrival-page"><section className="arrival-card"><h1>{closed ? 'This seating is closed.' : 'Your guest access expired.'}</h1><p>{closed ? 'Your previous order stays with the restaurant.' : 'Rejoin to continue at this table.'}</p><button className="primary-button" onClick={rejoin}>Rejoin table</button></section></main>;
+  const editable = !busy && !poll.stale && table?.session?.status === 'OPEN' && cart?.state === 'EDITING' && !sessionStorage.getItem(operationKey);
+  const paymentLabel = checkout?.orderId ? 'Order received by kitchen' : checkout?.status === 'COMMITTED'
+    ? 'Payment committed — order delivery pending' : checkout?.status === 'PENDING' ? 'Payment pending — checking outcome'
+    : checkout?.status === 'FAILED' ? 'Payment failed — retry available' : cart?.state === 'COMMITTED' ? 'Table payment committed' : cart?.state === 'PENDING' ? 'Table payment pending' : 'Ready when your table is ready';
+  return <main className="diner-page"><header className="diner-header"><Link className="brand" href="/">table<i>sync</i></Link><span>{table?.name} · {table?.session?.status}</span></header>
+    {notice}<section className="diner-hero"><div><p className="kicker light">Juniper House · {code}</p><h1>Hello, {guest.name}.</h1><p>{table?.session?.participants.length ?? 0} guests at this table. Everyone can add their own dishes.</p></div></section>
+    {table?.session?.status === 'CLOSING' && <p role="status">Staff are closing this seating. Ordering is paused.</p>}
+    <section className="menu-section"><div className="section-heading"><h2>Today&apos;s menu</h2></div><div className="menu-grid">{menu.map(item => <article className="dish-card" key={item.id}><div className="dish-art">{item.emoji}</div><div className="dish-copy"><h3>{item.name}</h3><p>{item.description}{!item.available && ' · Currently unavailable'}</p></div><strong>{money(item.unitPriceMinor)}</strong><button className="round-add" disabled={!editable || !item.available || (cart?.items.find(line => line.menuItemId === item.id && line.ownerId === guest.id)?.quantity ?? 0) >= 20} aria-label={`Add ${item.name}`} onClick={() => change(item.id, (cart?.items.find(line => line.menuItemId === item.id && line.ownerId === guest.id)?.quantity ?? 0) + 1)}>+</button></article>)}</div></section>
+    {cart && table ? <GuestCart cart={cart} table={table} ownerId={guest.id} disabled={!editable} change={change} /> : <p>Loading shared cart…</p>}
+    <section className="payment-status"><h2 role="status">{paymentLabel}</h2><p>Simulate table payment — no money is collected.</p><p>This pays for all dishes at the table in one simulated transaction.</p>
+      <button className="primary-button" disabled={busy || poll.stale || !cart?.items.length || table?.session?.status !== 'OPEN' || !!checkout?.orderId || checkout?.status === 'COMMITTED'} onClick={pay}>{busy ? 'Checking payment…' : checkout?.status === 'FAILED' ? 'Retry simulated payment' : checkout?.status === 'PENDING' ? 'Check payment outcome' : `Simulate table payment · ${money(cart?.total.amountMinor ?? 0)}`}</button>
+    </section>
+  </main>;
 }

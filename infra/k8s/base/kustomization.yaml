@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: tablesync
+resources:
+  - namespace.yaml
+  - config.yaml
+  - postgres.yaml
+  - redis.yaml
+  - rabbitmq.yaml
+  - applications.yaml
+  - migrate-job.yaml
+  - demo-identity.yaml

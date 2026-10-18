@@ -1,15 +1,24 @@
-# Demonstration acceptance sequence
+# Five-minute presentation
 
-Status: proposed sequence, not a verified runbook. W7 must add exact tested commands and evidence.
+Start the chosen environment. Keep owner, operator and guest windows separate.
 
-1. Identify environment and revision. Show which application and telemetry sources are running.
-2. Open a generated table URL on a phone. Join a second independent browser as another guest.
-3. Add separate guest items, demonstrate ownership, and show the owner table view updating.
-4. Submit a clearly labeled table-level simulated checkout. Retry safely and show one persistent kitchen order.
-5. Advance the kitchen order through preparation, ready, and served. Close the seating session without deleting history.
-6. Open real metrics and establish the one-replica baseline. Run the documented local k6 scenario.
-7. Show CPU, desired replicas, and actual ready replicas changing. Wait through cooldown and show scale-down.
-8. Replace an application pod and verify the committed order remains available.
-9. State the boundaries: local pod autoscaling, synthetic test traffic, simulated money, and temporary public access if tunneling.
+1. **Owner:** demo login, Menu. Add/edit a dish, change price or hide it. Open
+   Tables and show the QR for SAGE-12.
+2. **Guests:** join from two private browser windows. Add different dishes.
+   Show the shared total and that each guest edits only their own lines.
+3. **Payment:** click **Simulate table payment**. No card or money is involved.
+   Wait for kitchen confirmation.
+4. **Kitchen:** start preparing, mark ready, then served. Close the seating for
+   new guests after serving its orders.
+5. **Business:** Dashboard, today's date / one day. Show simulated sales,
+   quantities, orders, popular dishes and table totals. Empty periods show zero.
+6. **Cloud:** operator demo login. Show real traffic, latency, errors and ready
+   replicas. Open Grafana. Run `npm run cloud:load` in another terminal and watch CPU/HPA.
 
-Save actual observations, failures, and timings in STATUS. Capture a backup recording of a real successful rehearsal. Do not use a recording as if it were live or represent a public tunnel as cloud compute.
+Gateway routes requests; Session owns tables/guests; Order owns menu/cart/kitchen;
+Payment simulates checkout; RabbitMQ delivers events; PostgreSQL keeps orders;
+Prometheus/Grafana show infrastructure activity.
+
+Show the actual measured result. If replicas do not rise, show CPU/HPA state
+rather than claiming scale-up. Money is simulated and Kubernetes runs locally.
+A tunnel provides public access, not hosted cloud compute.

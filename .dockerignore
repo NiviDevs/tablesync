@@ -1,0 +1,10 @@
+**/node_modules
+**/.next
+.git
+.codegraph
+.projectmem
+**/.env*
+!**/.env.example
+**/.local
+**/test-results
+**/playwright-report

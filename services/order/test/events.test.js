@@ -1,10 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { isCommittedPaymentEvent } from '../server.js';
+import { processPaymentDelivery } from '../src/consumer.js';
 
-const committed = { id: 'e24c6be5-edca-410b-9b9b-277057b071e4', version: 1, occurredAt: '2026-09-15T00:00:00.000Z', correlationId: 'e24c6be5-edca-410b-9b9b-277057b071e5', type: 'payment.saga_committed.v1', data: { sagaId: 'e24c6be5-edca-410b-9b9b-277057b071e6', sessionId: 'e24c6be5-edca-410b-9b9b-277057b071e7', totalAmount: 340 } };
-test('accepts the committed-payment contract required for an order projection', () => assert.equal(isCommittedPaymentEvent(committed), true));
-test('rejects incomplete and non-committed payment events', () => {
-  assert.equal(isCommittedPaymentEvent({ ...committed, type: 'payment.failed.v1' }), false);
-  assert.equal(isCommittedPaymentEvent({ ...committed, data: { ...committed.data, totalAmount: 0 } }), false);
+const committed = { id: randomUUID(), version: 2, occurredAt: new Date().toISOString(), correlationId: randomUUID(), type: 'payment.saga_committed.v2',
+  data: { checkoutId: randomUUID(), sagaId: randomUUID(), sessionId: randomUUID(), totalAmountMinor: 34000, currency: 'INR' } };
+test('accepts v2 minor-unit snapshot events and excludes legacy contracts', () => {
+  assert.equal(isCommittedPaymentEvent(committed), true);
+  assert.equal(isCommittedPaymentEvent({ ...committed, version: 1, type: 'payment.saga_committed.v1' }), false);
+  assert.equal(isCommittedPaymentEvent({ ...committed, data: { ...committed.data, totalAmountMinor: 0 } }), false);
+  assert.equal(isCommittedPaymentEvent({ ...committed, data: { ...committed.data, currency: 'USD' } }), false);
+});
+test('malformed delivery cannot starve the following valid event; retries are bounded', async () => {
+  const actions = [];
+  const channel = { ack() { actions.push('ack'); }, nack(_message, _all, requeue) { actions.push(`nack:${requeue}`); },
+    sendToQueue() { actions.push('retry'); }, async waitForConfirms() {} };
+  await processPaymentDelivery({ content: Buffer.from('{') }, { channel, project() { throw new Error('must not run'); } });
+  await processPaymentDelivery({ content: Buffer.from(JSON.stringify(committed)) }, { channel, project: async () => {} });
+  await processPaymentDelivery({ content: Buffer.from(JSON.stringify(committed)), properties: { headers: { 'x-tablesync-attempt': 3 } } },
+    { channel, project: async () => { throw new Error('dependency down'); } });
+  assert.deepEqual(actions, ['nack:false', 'ack', 'nack:false']);
 });

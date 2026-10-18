@@ -1,7 +1,11 @@
+import { registerTelemetry, registerHealth, fastifyOptions, registerShutdown } from '@tablesync/telemetry';
 import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import { authFromEnvironment } from './src/auth.js';
+import { registerProductRoutes } from './src/routes.js';
+import { createOpsReader, registerOpsRoutes } from './src/ops.js';
 
 const runtime = process.env.TABLESYNC_RUNTIME ?? 'local-demo';
 const sessionUrl = process.env.SESSION_SERVICE_URL ?? 'http://localhost:8081';
@@ -34,13 +38,29 @@ async function ordersFor(code) {
   return requestJson(`${orderUrl}/v1/orders?sessionId=${encodeURIComponent(session.id)}`);
 }
 
-export function buildApp() {
-  const app = Fastify({ logger: true }); const rooms = new Map(); app.register(websocket);
+export function buildApp(options = {}) {
+  const selectedRuntime = options.runtime ?? runtime;
+  const app = Fastify(fastifyOptions);
+  registerTelemetry(app, { service: 'api-gateway' });
+  registerHealth(app, { checkDependencies: options.checkDependencies ?? (async () => {
+    if (selectedRuntime !== 'services') return true;
+    const responses = await Promise.all([sessionUrl, orderUrl, paymentUrl].map(base =>
+      (options.fetchImpl ?? fetch)(new URL('/readyz', base), { signal: AbortSignal.timeout(900) })));
+    return responses.every(response => response.ok);
+  }) });
+  if (selectedRuntime === 'services') {
+    app.get('/health', async () => ({ service: 'api-gateway', status: 'ok', runtime: 'services' }));
+    registerProductRoutes(app, { auth: options.auth ?? authFromEnvironment(),
+      internalSecret: options.internalSecret ?? process.env.INTERNAL_API_SECRET,
+      sessionUrl, orderUrl, ...options });
+    registerOpsRoutes(app, { reader: createOpsReader({ prometheusUrl: process.env.PROMETHEUS_URL, grafanaUrl: process.env.GRAFANA_URL }) });
+    return app;
+  }
+  const rooms = new Map(); app.register(websocket);
   app.addHook('onRequest', async (_request, reply) => { reply.header('access-control-allow-origin', process.env.WEB_ORIGIN ?? 'http://localhost:3000'); reply.header('access-control-allow-methods', 'GET,POST,OPTIONS'); reply.header('access-control-allow-headers', 'content-type'); });
   app.options('*', async (_request, reply) => reply.code(204).send());
   const broadcast = async (code, type) => { const message = JSON.stringify({ type, session: await getSession(code) }); for (const socket of rooms.get(code.toUpperCase()) ?? []) if (socket.readyState === socket.OPEN) socket.send(message); };
   app.get('/health', async () => ({ service: 'api-gateway', status: 'ok', runtime }));
-  app.get('/metrics', async (_request, reply) => reply.type('text/plain').send(`# HELP tablesync_active_table_sessions Active gateway rooms\n# TYPE tablesync_active_table_sessions gauge\ntablesync_active_table_sessions ${rooms.size}\n`));
   app.get('/v1/table-sessions/:code', async request => getSession(request.params.code));
   app.post('/v1/table-sessions/join', async (request, reply) => { const { tableCode, participant } = request.body ?? {}; if (!tableCode || !participant?.id || !participant?.name) return reply.code(400).send({ error: 'tableCode and participant id/name are required' }); try { const session = await joinSession(tableCode, participant); await broadcast(tableCode, 'participant.joined.v1'); return session; } catch (error) { return reply.code(502).send({ error: 'session service unavailable', detail: error.message }); } });
   app.post('/v1/table-sessions/:code/cart-items', async (request, reply) => { const { participantId, menuItemId } = request.body ?? {}; try { const session = await addItem(request.params.code, participantId, menuItemId); await broadcast(request.params.code, 'cart.item_added.v1'); return session; } catch (error) { const status = error.message.includes('must join') || error.message.includes('403') ? 403 : error.message.includes('not found') || error.message.includes('404') ? 404 : 502; return reply.code(status).send({ error: error.message }); } });
@@ -49,4 +69,4 @@ export function buildApp() {
   app.get('/v1/table-sessions/:code/live', { websocket: true }, async (socket, request) => { const code = request.params.code.toUpperCase(); if (!rooms.has(code)) rooms.set(code, new Set()); rooms.get(code).add(socket); try { socket.send(JSON.stringify({ type: 'session.snapshot.v1', session: await getSession(code) })); } catch { socket.send(JSON.stringify({ type: 'session.error.v1', error: 'Session service unavailable' })); } socket.on('close', () => rooms.get(code)?.delete(socket)); });
   return app;
 }
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) { const app = buildApp(); app.listen({ port: Number(process.env.PORT ?? 8080), host: '0.0.0.0' }); }
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) { const app = buildApp(); registerShutdown(app, async () => {}); app.listen({ port: Number(process.env.PORT ?? 8080), host: '0.0.0.0' }); }

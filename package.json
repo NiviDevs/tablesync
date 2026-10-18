@@ -2,14 +2,29 @@
   "name": "tablesync",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "npm@11.19.1",
+  "packageManager": "npm@10.9.9",
+  "engines": { "node": "22.23.3", "npm": "10.9.9" },
   "workspaces": ["apps/*", "services/*", "packages/*"],
   "scripts": {
+    "cloud": "bash scripts/cloud.sh",
+    "cloud:open": "bash scripts/cloud.sh open",
+    "cloud:stop": "bash scripts/cloud.sh stop",
+    "cloud:password": "bash scripts/cloud.sh password",
+    "cloud:load": "bash scripts/cloud.sh load",
+    "demo": "node scripts/demo.mjs",
+    "demo:stop": "node scripts/demo.mjs stop",
+    "demo:logs": "node scripts/demo.mjs logs",
+    "demo:setup": "node scripts/demo.mjs setup",
     "dev": "npm run dev --workspace=@tablesync/web",
     "dev:api": "npm run dev --workspace=@tablesync/api-gateway",
     "build": "npm run build --workspace=@tablesync/web",
-    "lint": "npm run lint --workspace=@tablesync/web",
+    "smoke:services": "node scripts/service-smoke.mjs",
+    "db:migrate": "node infra/postgres/migrate.mjs",
+    "test:migrations": "node --test infra/postgres/test/migrations.test.mjs",
+    "test:integration": "node scripts/integration-test.mjs",
+    "test:e2e": "npm run test:e2e --workspace=@tablesync/web",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
-  }
+  },
+  "dependencies": { "pg": "^8.13.0" }
 }
