@@ -227,3 +227,18 @@ The original checkout remains on `main`; B-owned files are untouched.
 - Supabase public settings are web build arguments; runtime-only settings cannot
   replace browser-bundled values. Deployment notes must retain that distinction.
 - Cluster manifests, monitoring, Ops and scaling evidence remain B-owned work.
+
+## Dependency-disconnect corrections — 2026-10-18
+
+- B's real cluster database outage exposed unhandled `pg.Pool` idle-client errors.
+  Reviewed `e745250` and cherry-picked it as `c877793`: Session, Order and Payment
+  now consume those errors with static, code-only structured logging.
+- Rebuilt/restarted those three services in the existing Compose project;
+  startup exited 0. No outage was injected into A's application database.
+- B also identified Session's missing Redis error listener. A added the matching
+  two-line handler in focused commit `5555ae2` and sent it to B for cherry-pick.
+- No API, event, schema or dependency changes. No automated suites run by A.
+  Real database/Redis outage and recovery evidence remains pending B's cluster
+  run; integration alone does not establish recovery without process restarts.
+- Session was rebuilt/restarted with the Redis listener; Compose exited 0
+  and reported Session healthy. Existing volumes and data were preserved.
