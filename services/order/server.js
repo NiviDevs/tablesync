@@ -12,6 +12,8 @@ import { createRestaurantStore } from './src/restaurant.js';
 export { isCommittedPaymentEvent } from './src/checkout.js';
 
 const database = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://tablesync:tablesync@localhost:5432/tablesync' });
+// pg removes failed idle clients; consume its error event so dependency loss does not kill HTTP.
+database.on('error', error => console.error(JSON.stringify({ level: 'error', code: error.code, message: 'database idle connection failed' })));
 const sessionUrl = process.env.SESSION_SERVICE_URL ?? 'http://localhost:8081';
 const paymentUrl = process.env.PAYMENT_SERVICE_URL ?? 'http://localhost:8083';
 const rabbitUrl = process.env.RABBITMQ_URL ?? 'amqp://guest:guest@localhost:5672';
