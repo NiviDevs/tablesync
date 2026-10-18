@@ -1,40 +1,36 @@
 # TableSync
 
-TableSync is a restaurant operations project for a cloud computing assessment. The immediate goal is a reliable seated-guest ordering flow and a measurable Kubernetes demonstration. The longer-term direction is a restaurant suite with customer history and business analytics.
+A restaurant demo with guest ordering, owner dashboard, kitchen and DevOps views.
+Payments are simulated. Owners manage dishes, prices and tables and see daily
+sales, order volume and dish performance.
 
-## Start here
+## Start locally
 
-Read [the documentation index](docs/README.md), then [current project state](docs/PROJECT_STATE.md).
-
-- [Approved design](docs/REBUILD_SPEC.md): scope, architecture, data ownership, reliability, telemetry, and acceptance criteria.
-- [Team handoff](docs/TEAM_HANDOFF.md): work packages, dependencies, ownership, and contributor instructions.
-- [Status](docs/STATUS.md): implementation evidence and remaining work.
-- [Event contracts](docs/EVENTS.md): existing service events; changes require producer and consumer review.
-
-The design is approved; the detailed execution plans await review. The rebuild is not implemented. No application code changed during this documentation reset.
-
-## Important current limitation
-
-There are currently three paths: the web UI uses Supabase `demo_*` tables directly; Compose runs a separate service-backed implementation; the Render blueprint selects an in-memory gateway. Starting Compose does **not** connect the current UI to those services.
-
-The existing commands are:
+Start Docker Desktop or Docker Engine. With Node.js/npm available, open a
+terminal in this repository and run:
 
 ```bash
-npm install
-npm run dev
-# Separate service stack; requires Docker:
-docker compose up -d --build
+npm run demo
 ```
 
-The browser demo needs the Supabase public environment settings and its migrations. Do not assume those migrations are applied. Its presentation policies are not production authorization. See [current state](docs/PROJECT_STATE.md) before exposing it publicly.
+No account setup or host `npm install` is needed. The first start downloads and
+builds images. Wait for **Ready: http://localhost:3000**, then open that address.
+Select **Restaurant dashboard** and choose the owner or DevOps demo login.
+Kitchen is a link in the owner view.
 
-## Repository map
+Open **http://localhost:3000/app?table=SAGE-12** in a private/incognito window
+for a separate guest. Join, add dishes, then click **Simulate table payment**.
 
-- `apps/web`: Next.js guest, restaurant, sign-in, and Ops screens.
-- `services`: gateway, Session, Order, and Payment implementations; other directories include placeholders.
-- `packages/contracts`: existing event definitions and checks.
-- `infra`: PostgreSQL initialization/migrations and a small k6 health check.
-- `supabase/migrations`: separate browser-demo schema and policies.
-- `docs`: current documentation; `docs/archive` contains superseded material.
+```bash
+npm run demo:stop     # Stop; preserve orders and database data
+npm run demo:logs     # Read service errors
+```
 
-Payments are simulated. Kubernetes, live telemetry, and autoscaling remain unverified. A public tunnel is temporary access to local compute, not cloud hosting.
+- [Five-minute walkthrough](docs/DEMO.md)
+- [Startup help](docs/DEPLOYMENT.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Current features and limits](docs/STATUS.md)
+- [Cloud setup](infra/k8s/README.md)
+
+The Kubernetes demo uses the same app with Prometheus, Grafana and live Ops
+metrics. Local Kubernetes runs on your computer, not hosted cloud compute.

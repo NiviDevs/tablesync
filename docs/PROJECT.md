@@ -1,5 +1,8 @@
-# Product direction
+# Product
 
-The documentation baseline was reset on 2026-10-16. Read [REBUILD_SPEC.md](REBUILD_SPEC.md) for the approved direction and [PROJECT_STATE.md](PROJECT_STATE.md) for current source-backed behavior. The design is approved; execution plans await review and implementation has not started.
+TableSync is an educational restaurant suite for seated guests: shared ordering,
+owner menu/table management and analytics, kitchen preparation, and an operator
+view of infrastructure. Payments are simulated. Reservations, delivery, CRM and
+real payment collection are outside this demo.
 
-The previous document is preserved in [the historical archive](archive/2026-10-16/PROJECT.md). It is not an active implementation instruction.
+[Start](../README.md) · [Architecture](ARCHITECTURE.md) · [Status](STATUS.md)
