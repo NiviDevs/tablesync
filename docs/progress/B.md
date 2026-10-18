@@ -40,3 +40,18 @@ Original main and A's worktree remain untouched.
   with the workspace lockfile (C2). No API, event or migration contract changed.
 - Limits: dependency failure/recovery is injected in unit checks. Real cluster
   scraping, process shutdown and dependency outage acceptance remain C2/C3.
+
+## C2 shared image handoff — 2026-10-18
+
+- Commit: this focused handoff (`build: use locked workspace images for cluster deployment`).
+- Scope approved by A: four root-context service Dockerfiles, Compose build
+  contexts, Next standalone config, web image/health route and `.dockerignore`.
+- All five images build successfully with Node 22.23.3/npm 10.9.9 and `npm ci`.
+  Node base is pinned to the pulled multi-architecture digest recorded in the
+  Dockerfiles and `infra/k8s/versions.env`. Runtime user is `node`.
+- Service images include the telemetry workspace and the existing migration
+  runner/SQL. Next standalone output includes workspace file tracing and static
+  assets. Supabase public build arguments remain explicit; secrets stay runtime.
+- A must integrate this focused commit before rebuilding its Compose services.
+  A's running containers, volumes and local environment remain untouched.
+- Cluster files and runtime acceptance remain separate C2 work on B's branch.
