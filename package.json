@@ -6,6 +6,10 @@
   "engines": { "node": "22.23.3", "npm": "10.9.9" },
   "workspaces": ["apps/*", "services/*", "packages/*"],
   "scripts": {
+    "demo": "node scripts/demo.mjs",
+    "demo:stop": "node scripts/demo.mjs stop",
+    "demo:logs": "node scripts/demo.mjs logs",
+    "demo:setup": "node scripts/demo.mjs setup",
     "dev": "npm run dev --workspace=@tablesync/web",
     "dev:api": "npm run dev --workspace=@tablesync/api-gateway",
     "build": "npm run build --workspace=@tablesync/web",

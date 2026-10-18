@@ -9,3 +9,5 @@ playwright-report
 .env.local
 *.log
 !.env.example
+
+**/.local

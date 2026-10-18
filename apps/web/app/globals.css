@@ -74,3 +74,5 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 @media (max-width: 900px) { .owner-menu-layout { grid-template-columns: 1fr; } .business-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .owner-dish { flex-wrap: wrap; } .owner-dish-actions { display: flex; margin-left: 0; width: 100%; } .dashboard-filters { width: 100%; } .board-heading { flex-wrap: wrap; gap: 16px; } .business-metrics article { padding: 16px 12px; } }
 @media (max-width: 600px) { .cart-line { align-items: flex-start; flex-direction: column; } }
+
+.demo-role-button { margin-top: 12px; background: var(--forest); }

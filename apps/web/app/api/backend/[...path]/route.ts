@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 
 const routes: [string, RegExp][] = [
+  ['GET', /^v1\/ops\/overview$/],
   ['GET', /^v1\/tables\/[A-Z0-9-]+$/], ['GET', /^v1\/menu$/],
   ['POST', /^v1\/table-sessions\/join$/],
   ['GET', /^v1\/sessions\/[a-f0-9-]+\/cart$/],
@@ -22,13 +23,17 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
     return failure(404, 'NOT_FOUND', 'Route not found');
   }
   const url = new URL(request.url);
-  const staff = path.startsWith('v1/restaurant/') || path.endsWith('/status') || path.endsWith('/close');
+  const staff = path.startsWith('v1/restaurant/') || path.startsWith('v1/ops/') || path.endsWith('/status') || path.endsWith('/close');
   // Next's internal request URL can use its bind hostname; Host is the browser-facing authority.
   const publicOrigin = `${url.protocol}//${request.headers.get('host')}`;
   if (staff && request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) {
     return failure(403, 'ORIGIN_REJECTED', 'Staff changes must come from this site');
   }
   let authorization = request.headers.get('authorization');
+  if (staff && !authorization && process.env.TABLESYNC_DEMO_ENABLED === 'true') {
+    const token = (await cookies()).get('tablesync-demo-session')?.value;
+    if (token) authorization = `Bearer ${token}`;
+  }
   if (staff && !authorization && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     const { data } = await createClient(await cookies()).auth.getSession();
     if (data.session) authorization = `Bearer ${data.session.access_token}`;
