@@ -55,3 +55,33 @@ Original main and A's worktree remain untouched.
 - A must integrate this focused commit before rebuilding its Compose services.
   A's running containers, volumes and local environment remain untouched.
 - Cluster files and runtime acceptance remain separate C2 work on B's branch.
+
+## C2 — deployed and runtime verified, 2026-10-18
+
+- Commit: this C2 commit (`feat: deploy the service stack to local Kubernetes`).
+- Profile/context/namespace `tablesync`, Minikube v1.37.0, Kubernetes/kubectl
+  v1.34.1; Docker driver, 4 CPU quota and 6144 MiB requested. Published SHA-256
+  checksums verified for downloaded Minikube/kubectl binaries.
+- Bootstrap exits 0: all eight workload pods Ready, revision-named migration
+  Job completes, server dry-run passes, private ClusterIP services, PVCs bound.
+  Images deployed from `fdd1b426ce24`; all five image builds pass.
+- Real application flow commits order `04865ecb-472b-449b-be60-26529ebf1864`;
+  actual Order restart preserves the same ID. Migration rerun says already
+  current and preserves the one order. Evidence is in `infra/k8s/evidence`.
+- Real PostgreSQL outage initially exposed unhandled idle-pool errors, causing
+  application restarts. Correction `e745250` is integrated by A as `c877793`.
+  Rerun passes: Session/Order/Payment/gateway stay live (200), readiness becomes
+  503, then recovers; all corrected application restart counts remain zero.
+- A Redis listener `5555ae2` is cherry-picked as `fdd1b42`; real Redis outage is
+  not rehearsed. No more broad failure runs or suites after A reports the user
+  deadline. Remaining work prioritizes functional monitoring/Ops/scaling demo.
+- `kubectl top pods` reports real per-workload data; sample consumption is
+  Session 45m/28Mi, gateway 41m/28Mi, Order 33m/24Mi, Payment 33m/23Mi,
+  web 56m/46Mi, PostgreSQL 6m/29Mi, Redis 8m/9Mi, RabbitMQ 148m/131Mi.
+- Bootstrap now reuses a healthy profile; repeated `minikube start` restarted
+  node containers on this host. A bootstrap run also failed after its file was
+  edited during execution; stable-file rerun passed. No volume/data deletion.
+- Quick start: `PATH=/tmp/tablesync-bin:$PATH IMAGE_TAG=fdd1b426ce24 bash
+  infra/k8s/bootstrap.sh`; forward `service/web` port 3000. Use a Docker-group
+  shell. Real Supabase public settings must be image build arguments.
+- C3/C4/C5 remain separate gates. A owns final shared docs/main integration.

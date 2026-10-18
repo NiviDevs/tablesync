@@ -1,0 +1,51 @@
+2026-10-18T07:26:34Z
+NAME                           RESTARTS
+api-gateway-5ff48fcdcb-h5zm4   0
+migrate-63c1207fc21c-mc6p5     0
+migrate-fdd1b426ce24-wkdtp     0
+order-6d58ddbdb4-c8x5w         0
+payment-767cb495d6-mc6dr       0
+postgres-0                     1
+rabbitmq-0                     1
+redis-5df5f8f455-5lhcg         1
+session-b7bd477f8-jgdg5        0
+web-57494d5cf4-92dxw           0
+statefulset.apps/postgres scaled
+pod/postgres-0 condition met
+{"service":"session","liveness":200,"readiness":503}
+{"service":"order","liveness":200,"readiness":503}
+{"service":"payment","liveness":200,"readiness":503}
+{"service":"api-gateway","liveness":200,"readiness":503}
+statefulset.apps/postgres scaled
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+partitioned roll out complete: 1 new pods have been updated...
+partitioned roll out complete: 1 new pods have been updated...
+deployment "redis" successfully rolled out
+deployment "session" successfully rolled out
+deployment "order" successfully rolled out
+deployment "payment" successfully rolled out
+deployment "api-gateway" successfully rolled out
+deployment "web" successfully rolled out
+job.batch/migrate-fdd1b426ce24 condition met
+NAME                           READY   STATUS      RESTARTS        AGE
+api-gateway-5ff48fcdcb-h5zm4   1/1     Running     0               52s
+migrate-63c1207fc21c-mc6p5     0/1     Completed   0               12m
+migrate-fdd1b426ce24-wkdtp     0/1     Completed   0               59s
+order-6d58ddbdb4-c8x5w         1/1     Running     0               52s
+payment-767cb495d6-mc6dr       1/1     Running     0               52s
+postgres-0                     1/1     Running     0               10s
+rabbitmq-0                     1/1     Running     1 (3m37s ago)   14m
+redis-5df5f8f455-5lhcg         1/1     Running     1 (3m38s ago)   14m
+session-b7bd477f8-jgdg5        1/1     Running     0               52s
+web-57494d5cf4-92dxw           1/1     Running     0               52s
+NAME                           CPU(cores)   MEMORY(bytes)   
+api-gateway-5ff48fcdcb-h5zm4   41m          28Mi            
+order-6d58ddbdb4-c8x5w         33m          24Mi            
+payment-767cb495d6-mc6dr       33m          23Mi            
+postgres-0                     6m           29Mi            
+rabbitmq-0                     148m         131Mi           
+redis-5df5f8f455-5lhcg         8m           9Mi             
+session-b7bd477f8-jgdg5        45m          28Mi            
+web-57494d5cf4-92dxw           56m          46Mi            
+2026-10-18T07:26:48Z
