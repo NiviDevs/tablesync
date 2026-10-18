@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-identity
+spec:
+  selector:
+    app: demo-identity
+  ports:
+  - name: http
+    port: 8084
+    targetPort: 8084
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-identity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-identity
+  template:
+    metadata:
+      labels:
+        app: demo-identity
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: demo-identity
+        image: tablesync/api-gateway:dev
+        imagePullPolicy: IfNotPresent
+        command:
+        - node
+        - services/api-gateway/demo-identity.js
+        env:
+        - name: DEMO_JWT_PRIVATE_JWK
+          valueFrom:
+            secretKeyRef:
+              name: tablesync-secrets
+              key: DEMO_JWT_PRIVATE_JWK
+        - name: INTERNAL_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: tablesync-secrets
+              key: INTERNAL_API_SECRET
+        - name: TABLESYNC_DEMO_ENABLED
+          value: 'true'
+        - name: STAFF_JWT_ISSUER
+          value: http://demo-identity:8084
+        ports:
+        - name: http
+          containerPort: 8084
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http

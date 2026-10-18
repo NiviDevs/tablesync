@@ -11,6 +11,9 @@ data:
   GATEWAY_URL: http://api-gateway:8080
   PROMETHEUS_URL: http://prometheus:9090
   GRAFANA_URL: http://localhost:3001/d/tablesync-application
+  TABLESYNC_DEMO_ENABLED: 'true'
+  TABLESYNC_DEMO_IDENTITY_URL: http://demo-identity:8084
+  OPS_ENVIRONMENT: local-minikube
 ---
 apiVersion: v1
 kind: ConfigMap

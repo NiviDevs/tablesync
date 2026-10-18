@@ -9,3 +9,4 @@ resources:
   - rabbitmq.yaml
   - applications.yaml
   - migrate-job.yaml
+  - demo-identity.yaml

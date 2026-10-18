@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(dirname "$0")/tools.sh"
 : "${EVIDENCE_DIR:?Set EVIDENCE_DIR to a local evidence directory}"
 mkdir -p "$EVIDENCE_DIR"
 k=(kubectl --context=tablesync -n tablesync)

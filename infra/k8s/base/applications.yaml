@@ -48,25 +48,16 @@ spec:
               name: tablesync-secrets
               key: GUEST_TOKEN_SECRET
         - name: STAFF_JWT_ISSUER
-          valueFrom:
-            secretKeyRef:
-              name: tablesync-secrets
-              key: STAFF_JWT_ISSUER
+          value: http://demo-identity:8084
         - name: STAFF_JWT_AUDIENCE
           valueFrom:
             secretKeyRef:
               name: tablesync-secrets
               key: STAFF_JWT_AUDIENCE
         - name: STAFF_JWKS_URL
-          valueFrom:
-            secretKeyRef:
-              name: tablesync-secrets
-              key: STAFF_JWKS_URL
+          value: http://demo-identity:8084/jwks
         - name: STAFF_ASSIGNMENTS_JSON
-          valueFrom:
-            secretKeyRef:
-              name: tablesync-secrets
-              key: STAFF_ASSIGNMENTS_JSON
+          value: '{"tablesync-demo-owner":{"restaurantId":"00000000-0000-4000-8000-000000000001","roles":["staff"]},"tablesync-demo-operator":{"restaurantId":"00000000-0000-4000-8000-000000000001","roles":["operator"]}}'
         resources:
           requests:
             cpu: 100m
@@ -383,7 +374,12 @@ spec:
         envFrom:
         - configMapRef:
             name: tablesync-config
-        env: []
+        env:
+        - name: INTERNAL_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: tablesync-secrets
+              key: INTERNAL_API_SECRET
         resources:
           requests:
             cpu: 200m
