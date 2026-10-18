@@ -175,6 +175,8 @@ checkout; it does not claim independent real payments, refunds or payouts.
   arbitrary Prometheus queries are not accepted from the browser.
 - Source samples older than 45 seconds are marked stale. Missing samples remain
   unavailable rather than appearing as zero or healthy.
+- Session keeps durable state outside the process, so additional replicas use
+  the same table/session constraints instead of isolated in-memory copies.
 - HPA scales **Session only**, min 1/max 3, targeting 60% of requested CPU.
   Scale-down has a 300-second stabilization window and removes at most one pod
   per minute under the configured policy.
@@ -209,7 +211,9 @@ Role B (`feat/cloud-observability`) delivered shared telemetry, probes/shutdown,
 workspace images, Kubernetes/bootstrap/persistence, Prometheus/Grafana, live Ops,
 demo cloud identity, HPA/load/capture scripts and deployment evidence. Shared
 service/image hooks were integrated through focused handoffs, then the committed
-cloud branch was merged into the product branch for the final main integration.
+cloud branch was merged into the product branch. Both branches, including the
+final Ops deadline correction, are integrated into `main` (merge checkpoints
+`f5f3e65` and `035ac18`).
 
 Selected milestones: `66ea50c` foundation; `9177a38` checkout; `b8fc4b7` browser/
 kitchen; `0ff3bc6` earlier browser coverage; `a85efae` owner features; `fb9b2c4`

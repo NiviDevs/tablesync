@@ -31,3 +31,15 @@ claim that all later changes were retested. Later work uses builds/startup only.
 B continues live monitoring/Ops/HPA. A owns simplified docs and the final merge
 of both finished branches into main. Do not delete persistent volumes or ignored
 credentials. Old plans and duplicate documentation were removed; Git preserves them.
+
+## Main integration and final documentation
+
+Both completed branches are integrated into main: `f5f3e65` merges the product
+and cloud work; `035ac18` includes B's final Ops deadline correction. Existing
+main ignore settings, ignored application/cluster credentials and data remain.
+The worktrees are retained as snapshots, not alternate deployment sources.
+
+The local demo now includes Prometheus and the protected live Ops route.
+`docs/FEATURES.md` is the combined record of completed work, technology, product
+rules and limitations. README and deployment/walkthrough instructions are short;
+old plans, duplicate archives and obsolete service notes were removed.

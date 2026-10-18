@@ -1,10 +1,9 @@
-# Role A handoff
+# Completed integration
 
-Worktree: `/tmp/tablesync-role-a`, branch `feat/product-integration`.
-Latest direction: finish the presentation, avoid extra testing, simplify startup
-and docs, then merge all finished A/B work into `main`.
+The finished product and cloud branches are merged into `main` in
+`/home/nevedya/Projects/tablesync`. Continue there for normal work. The separate
+A/B worktrees remain as snapshots; their code has been integrated.
 
-Product features and dependency-disconnect fixes are committed. `npm run demo`
-starts the local stack with explicit demo identities. Use the root README;
-[A progress](A.md) and [B progress](B.md) track integration. Preserve ignored
-credentials, database volumes and existing user changes.
+Read the root README to run the demo. `docs/FEATURES.md` records combined work,
+technology, product rules and limitations. Keep ignored `.env`/`.local` credentials
+and persistent volumes. No extra test suites are requested for this presentation.
