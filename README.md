@@ -49,3 +49,9 @@ stop it while preserving data.
 Minikube/kubectl are downloaded automatically on Linux x86_64 when missing.
 Allow at least 6 GiB for the cluster. Local Kubernetes runs on your computer,
 not hosted cloud compute. [Cloud details](infra/k8s/README.md).
+
+To show traffic on the cloud dashboards, open a second terminal and run
+`npm run cloud:load`. It sends read-only traffic for 60 seconds and records a
+60-second cooldown. Watch actual CPU and ready replicas; scale-down can take
+longer than that window. Grafana login is **operator**; `npm run cloud:password`
+shows its generated local password.

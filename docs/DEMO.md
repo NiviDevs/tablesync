@@ -13,7 +13,7 @@ Start the chosen environment. Keep owner, operator and guest windows separate.
 5. **Business:** Dashboard, today's date / one day. Show simulated sales,
    quantities, orders, popular dishes and table totals. Empty periods show zero.
 6. **Cloud:** operator demo login. Show real traffic, latency, errors and ready
-   replicas. Open Grafana. Run the cloud guide's load command and watch CPU/HPA.
+   replicas. Open Grafana. Run `npm run cloud:load` in another terminal and watch CPU/HPA.
 
 Gateway routes requests; Session owns tables/guests; Order owns menu/cart/kitchen;
 Payment simulates checkout; RabbitMQ delivers events; PostgreSQL keeps orders;

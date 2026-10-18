@@ -10,6 +10,7 @@
     "cloud:open": "bash scripts/cloud.sh open",
     "cloud:stop": "bash scripts/cloud.sh stop",
     "cloud:password": "bash scripts/cloud.sh password",
+    "cloud:load": "bash scripts/cloud.sh load",
     "demo": "node scripts/demo.mjs",
     "demo:stop": "node scripts/demo.mjs stop",
     "demo:logs": "node scripts/demo.mjs logs",

@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export TABLESYNC_CLOUD_ACTION="${1:-${TABLESYNC_CLOUD_ACTION:-start}}"
-case "$TABLESYNC_CLOUD_ACTION" in start|open|stop|password) ;; *) echo 'Use npm run cloud, cloud:open, cloud:stop or cloud:password'; exit 1;; esac
+case "$TABLESYNC_CLOUD_ACTION" in start|open|stop|password|load) ;; *) echo 'Use npm run cloud, cloud:open, cloud:stop, cloud:load or cloud:password'; exit 1;; esac
 if [[ "$TABLESYNC_CLOUD_ACTION" == password ]]; then
   node --input-type=module - <<'JS'
 import { readFileSync } from 'node:fs';
@@ -25,6 +25,10 @@ SH
   exit 1
 fi
 source infra/k8s/tools.sh
+if [[ "$TABLESYNC_CLOUD_ACTION" == load ]]; then
+  DURATION="${DURATION:-60s}" COOLDOWN="${COOLDOWN:-60s}" bash infra/k6/run.sh
+  exit $?
+fi
 if [[ "$TABLESYNC_CLOUD_ACTION" == stop ]]; then
   minikube stop -p tablesync
   echo 'Cluster stopped. Persistent data is preserved.'
@@ -37,6 +41,7 @@ if [[ "$TABLESYNC_CLOUD_ACTION" == start ]]; then
   for service in prometheus grafana kube-state-metrics; do
     kubectl --context=tablesync -n tablesync rollout status "deployment/$service" --timeout=240s
   done
+  kubectl --context=tablesync apply -f infra/k8s/session-hpa.yaml
 fi
 web_port="${WEB_PORT:-3000}"
 grafana_port="${GRAFANA_PORT:-3001}"
