@@ -3,6 +3,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { api, money, type Menu, type MenuItem } from '@/lib/api';
 import { usePoll } from '@/lib/use-poll';
 import { RestaurantNav } from '@/components/restaurant-nav';
+import styles from '@/components/restaurant-workspace.module.css';
 
 const blank = { name: '', description: '', emoji: '🍽️', price: '', available: true };
 export default function RestaurantMenu() {
@@ -13,6 +14,8 @@ export default function RestaurantMenu() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [search, setSearch] = useState('');
+  const [availability, setAvailability] = useState('all');
   const locked = useRef(false);
   const poll = usePoll(async signal => {
     try { const result = await api<Menu>('/v1/restaurant/menu', { signal }); setItems(result.items); }
@@ -42,27 +45,39 @@ export default function RestaurantMenu() {
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not save dish'); }
     finally { locked.current = false; setBusy(false); }
   }
-  return <main className="restaurant-page"><RestaurantNav />
-    <section className="restaurant-intro"><p className="kicker light">Juniper House · Menu</p><h1>Your dishes,<br />your menu.</h1><p>Add dishes, change prices and mark what is available today.</p></section>
-    <section className="restaurant-board">
-      {(error || poll.error) && <p role="alert" className="inline-error">{error || poll.error} <button onClick={poll.refresh}>Retry refresh</button></p>}
-      {poll.stale && <p role="status">Menu updates are stale. Showing the last received menu.</p>}
-      {message && <p role="status" className="success-note">{message}</p>}
-      <div className="owner-menu-layout"><div><div className="board-heading"><div><p className="kicker">Dish catalog</p><h2>{loading ? 'Loading…' : `${items.filter(item => item.available).length} available / ${items.length} dishes`}</h2></div></div>
-        <div className="owner-menu-list">{items.map(item => <article className="owner-dish" key={item.id}>
-          <span className="owner-dish-icon" aria-hidden="true">{item.emoji}</span><div><h3>{item.name}</h3><p>{item.description || 'No description'}</p><strong>{money(item.unitPriceMinor)}</strong><span className={`availability ${item.available ? '' : 'unavailable'}`}>{item.available ? 'Available' : 'Hidden from ordering'}</span></div>
-          <div className="owner-dish-actions"><button disabled={busy} onClick={() => edit(item)}>Edit</button><button disabled={busy || poll.stale} onClick={() => { const { id, ...fields } = item; void write(id, { ...fields, available: !item.available }); }}>{item.available ? 'Hide dish' : 'Make available'}</button></div>
-        </article>)}{!loading && !items.length && !poll.error && <p>No dishes yet. Add your first dish using the form.</p>}</div>
-      </div><form className="dish-form" onSubmit={save}><p className="kicker">{editing ? 'Edit dish' : 'New dish'}</p><h2>{editing ? 'Update your dish' : 'Add to the menu'}</h2>
-        <label htmlFor="dish-name">Dish name</label><input id="dish-name" required maxLength={120} value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} />
-        <label htmlFor="dish-description">Description</label><textarea id="dish-description" maxLength={500} rows={3} value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} />
-        <div className="dish-form-row"><div><label htmlFor="dish-icon">Icon</label><input id="dish-icon" required maxLength={24} value={draft.emoji} onChange={e => setDraft({ ...draft, emoji: e.target.value })} /></div>
-          <div><label htmlFor="dish-price">Price (₹)</label><input id="dish-price" required type="number" min="1" max="100000" step="0.01" inputMode="decimal" value={draft.price} onChange={e => setDraft({ ...draft, price: e.target.value })} /></div></div>
-        <label className="checkbox-label"><input type="checkbox" checked={draft.available} onChange={e => setDraft({ ...draft, available: e.target.checked })} />Available to order</label>
-        <button className="primary-button full" disabled={busy || poll.stale}>{busy ? 'Saving…' : editing ? 'Save changes' : 'Add dish'}</button>
-        {editing && <button type="button" className="text-button" onClick={() => { setEditing(null); setDraft(blank); }}>Cancel editing</button>}
-        <p className="quiet-note">Hiding a dish stops new additions. Price changes apply when guests next add or change a dish. Submitted orders keep their saved prices.</p>
-      </form></div>
+  const available = items.filter(item => item.available).length;
+  const visible = items.filter(item => `${item.name} ${item.description}`.toLowerCase().includes(search.trim().toLowerCase()) &&
+    (availability === 'all' || (availability === 'available' ? item.available : !item.available)));
+  return <main className={styles.shell}><RestaurantNav active="menu" />
+    <header className={styles.heading}><div><p className="kicker">Juniper House · Dish management</p><h1>Your menu, at a glance</h1></div><p>Keep dishes, prices and availability up to date.</p></header>
+    <section className={styles.board} aria-label="Menu management">
+      {(error || poll.error) && <p role="alert" className={styles.notice}>{error || poll.error} <button onClick={poll.refresh}>Retry refresh</button></p>}
+      {poll.stale && <p role="status" className={styles.notice}>Menu updates are stale. Showing the last received menu.</p>}
+      {message && <p role="status" className={`${styles.notice} ${styles.success}`}>{message}</p>}
+      <div className={styles.metrics}>{[
+        ['Total dishes', items.length, 'All catalog entries'], ['Available to order', available, 'Visible to guests'],
+        ['Hidden dishes', items.length - available, 'Kept in your catalog'],
+        ['Average listed price', money(items.length ? Math.round(items.reduce((sum, item) => sum + item.unitPriceMinor, 0) / items.length) : 0), 'Across the whole catalog'],
+      ].map(([label, value, note]) => <article className={styles.metric} key={label}><p>{label}</p><strong>{loading ? '—' : value}</strong><small>{note}</small></article>)}</div>
+      <div className={styles.menuGrid}>
+        <section className={styles.panel} aria-label="Dish catalog"><div className={styles.panelHeader}><div><h2>Dish catalog</h2><p>{loading ? 'Loading dishes…' : `${visible.length} of ${items.length} dishes shown`}</p></div><span>{available} available</span></div>
+          <div className={styles.panelTools}><input type="search" aria-label="Search dishes" placeholder="Search dish name or description…" value={search} onChange={event => setSearch(event.target.value)} /><select aria-label="Dish availability filter" value={availability} onChange={event => setAvailability(event.target.value)}><option value="all">All dishes</option><option value="available">Available</option><option value="hidden">Hidden</option></select></div>
+          <div className={`${styles.scroll} ${styles.menuList}`} tabIndex={0} role="region" aria-label="Menu dishes">{visible.map(item => <article className="owner-dish" key={item.id}>
+            <span className="owner-dish-icon" aria-hidden="true">{item.emoji}</span><div><h3>{item.name}</h3><p title={item.description}>{item.description || 'No description'}</p><strong>{money(item.unitPriceMinor)}</strong><span className={`availability ${item.available ? '' : 'unavailable'}`}>{item.available ? 'Available' : 'Hidden from ordering'}</span></div>
+            <div className="owner-dish-actions"><button disabled={busy} onClick={() => edit(item)}>Edit</button><button disabled={busy || poll.stale} onClick={() => { const { id, ...fields } = item; void write(id, { ...fields, available: !item.available }); }}>{item.available ? 'Hide dish' : 'Make available'}</button></div>
+          </article>)}{!loading && !visible.length && !poll.error && <p className={styles.empty}>{items.length ? 'No dishes match this view.' : 'No dishes yet. Add your first dish using the form.'}</p>}</div>
+        </section>
+        <form className={`dish-form ${styles.panel} ${styles.dishForm}`} onSubmit={save}><p className="kicker">{editing ? 'Edit dish' : 'New dish'}</p><h2>{editing ? 'Update your dish' : 'Add to the menu'}</h2>
+          <label htmlFor="dish-name">Dish name</label><input id="dish-name" required maxLength={120} value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })} />
+          <label htmlFor="dish-description">Description</label><textarea id="dish-description" maxLength={500} rows={2} value={draft.description} onChange={event => setDraft({ ...draft, description: event.target.value })} />
+          <div className="dish-form-row"><div><label htmlFor="dish-icon">Icon</label><input id="dish-icon" required maxLength={24} value={draft.emoji} onChange={event => setDraft({ ...draft, emoji: event.target.value })} /></div>
+            <div><label htmlFor="dish-price">Price (₹)</label><input id="dish-price" required type="number" min="1" max="100000" step="0.01" inputMode="decimal" value={draft.price} onChange={event => setDraft({ ...draft, price: event.target.value })} /></div></div>
+          <label className="checkbox-label"><input type="checkbox" checked={draft.available} onChange={event => setDraft({ ...draft, available: event.target.checked })} />Available to order</label>
+          <button className="primary-button full" disabled={busy || poll.stale}>{busy ? 'Saving…' : editing ? 'Save changes' : 'Add dish'}</button>
+          {editing && <button type="button" className="text-button" onClick={() => { setEditing(null); setDraft(blank); }}>Cancel editing</button>}
+          <details><summary>About availability & prices</summary><p>Hiding a dish stops new additions. Price changes apply when guests next add or change a dish. Submitted orders keep their saved prices.</p></details>
+        </form>
+      </div>
     </section>
   </main>;
 }

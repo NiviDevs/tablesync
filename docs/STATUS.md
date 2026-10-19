@@ -7,6 +7,10 @@
 - Dish creation/editing, prices and availability.
 - Table creation, QR and removal of unused tables.
 - Daily simulated sales, order quantities, dish performance and table metrics.
+- Compact owner and kitchen workspaces, with bounded desktop panels, searchable
+  menus/tables/tickets, and kitchen lanes for new, preparing, and ready orders.
+- Owner occupancy, seated guests, daily sales averages, sales per ordering guest,
+  dishes per order, active sales days, and catalog availability metrics.
 - Signed demo owner/operator access in the local educational environment.
 - Responsive Operations workspace with live metrics, service filters, source
   inspection, and manual or automatic refresh controls.

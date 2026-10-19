@@ -1,0 +1,132 @@
+.shell { height: 100svh; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 16px 24px; overflow: hidden; background: #1c2b23; color: #f7f5ee; }
+.shell :is(button, input, select, textarea, a, summary):focus-visible { outline: 3px solid #ce6b43; outline-offset: 3px; }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-shrink: 0; min-height: 39px; }
+.nav :global(.brand) { color: #f7f5ee; font-size: 24px; }
+.nav > div { display: flex; gap: 5px; padding: 4px; background: #ffffff09; border: 1px solid #ffffff12; border-radius: 99px; }
+.nav > div a { border-radius: 99px; color: #c4cdbb; padding: 8px 20px; font-size: 12px; text-decoration: none; white-space: nowrap; }
+.nav > div a:hover { background: #ffffff12; color: white; }
+.nav > div a[aria-current=page] { color: #293d2a; background: #dce5c8; font-weight: 700; }
+.staffLink { color: #c4cdbb; font-size: 11px; text-decoration: none; white-space: nowrap; }
+.staffLink span { margin-left: 8px; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-shrink: 0; padding: 3px 2px; }
+.heading :global(.kicker) { color: #acbaa1; font-size: 9px; margin-bottom: 6px; }
+.heading h1 { font-size: clamp(24px, 2.6vw, 34px); font-weight: 600; line-height: 1.12; letter-spacing: -1.4px; margin: 0; }
+.heading > p { color: #bbc7b2; font-size: 11px; line-height: 1.6; max-width: 360px; margin: 0; }
+.board { background: #e9eddc; border: 1px solid #f5f7e63b; border-radius: 22px; color: #263427; padding: 16px; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.notice { flex-shrink: 0; margin: 0; padding: 9px 13px; border-radius: 8px; background: #f8ebdb; color: #854d2d; font-size: 11px; line-height: 1.5; max-height: 80px; overflow-y: auto; }
+.notice button { margin-left: 8px; background: transparent; border: 0; color: inherit; text-decoration: underline; font-size: 11px; }
+.success { background: #dce8ca; color: #345135; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; flex-shrink: 0; }
+.metricsSix { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.metric { background: #f8f9f0; border: 1px solid #d9e0cc; border-radius: 12px; padding: 12px 15px; min-width: 0; }
+.metric p { font-size: 10px; color: #66735d; margin: 0 0 8px; }
+.metric strong { font-size: clamp(19px, 2vw, 27px); font-weight: 600; letter-spacing: -1px; line-height: 1.1; display: block; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.metric small { display: block; margin-top: 7px; font-size: 9px; color: #68745f; line-height: 1.4; }
+.analyticsGrid { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 12px; flex: 1; min-height: 0; }
+.panel { background: #f8f9f0; border: 1px solid #d9e0cc; border-radius: 14px; min-height: 0; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+.panelHeader { padding: 15px 16px 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-shrink: 0; }
+.panelHeader h2, .panelHeader h3 { font-size: 16px; font-weight: 600; letter-spacing: -.5px; margin: 0; }
+.panelHeader p { font-size: 10px; color: #6a775e; margin: 5px 0 0; }
+.panelHeader > span { color: #647356; background: #e9eedc; border-radius: 6px; padding: 5px 8px; font-size: 10px; white-space: nowrap; }
+.panelHeader > a { font-size: 10px; color: #48643c; text-decoration: none; }
+.filters { display: flex; gap: 10px; align-items: end; }
+.filters label { color: #c2ceb8; font-size: 9px; }
+.filters :is(select, input) { color: #e6ecd9; background: #304134; border: 1px solid #53644a; border-radius: 7px; padding: 8px 10px; margin-top: 5px; display: block; font: inherit; font-size: 11px; }
+.filters option { background: #304134; }
+.panelTools { display: flex; gap: 8px; padding: 0 16px 12px; align-items: center; flex-shrink: 0; }
+.panelTools :is(input, select), .tableForm input { min-width: 0; width: 100%; font: inherit; font-size: 11px; color: #32452e; background: #fffef8; border: 1px solid #d4dcc5; border-radius: 7px; padding: 9px 10px; }
+.panelTools select { width: auto; min-width: 110px; max-width: 45%; flex-shrink: 0; }
+.tableForm { display: flex; gap: 7px; width: min(100%, 255px); }
+.tableForm button, .actionButton { background: #365335; color: #f5f7ec; border: 0; border-radius: 7px; font-size: 11px; padding: 8px 12px; white-space: nowrap; }
+.tabs { display: flex; gap: 4px; background: #e8eddd; border: 1px solid #dce3ce; border-radius: 7px; padding: 3px; }
+.tabs button { font-size: 10px; border: 0; color: #607152; background: transparent; padding: 6px 9px; border-radius: 5px; white-space: nowrap; }
+.tabs button[aria-pressed=true] { color: #2f492b; background: #fffef7; box-shadow: 0 1px 3px #24362112; font-weight: 600; }
+.scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #b6c2a0 transparent; }
+.scroll:focus-visible { outline: 3px solid #ce6b43; outline-offset: -3px; }
+.fill { flex: 1; }
+.dataTable { width: 100%; border-collapse: collapse; text-align: left; font-size: 11px; }
+.dataTable :is(th, td) { padding: 11px 13px; border-bottom: 1px solid #e4e9d8; }
+.dataTable thead th { position: sticky; top: 0; z-index: 1; background: #edf1e3; color: #68775a; font-size: 9px; font-weight: 500; }
+.dataTable td:not(:first-child), .dataTable th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dataTable td:first-child { overflow-wrap: anywhere; }
+.dataTable button { background: transparent; border: 0; color: #47683b; font: inherit; cursor: pointer; text-align: left; padding: 0; text-decoration: underline; }
+.rank { display: inline-block; color: #8c987d; font: 9px 'DM Mono', monospace; margin-right: 8px; }
+.panelFooter { border-top: 1px solid #e0e7d2; padding: 10px 16px; font-size: 10px; color: #68775a; flex-shrink: 0; }
+.chart { display: flex; gap: 5px; align-items: stretch; flex: 1; min-height: 80px; margin: 4px 16px 12px; overflow-x: auto; }
+.chart button { background: transparent; border: 0; padding: 0; min-width: 8px; flex: 1; display: flex; flex-direction: column; color: #738163; }
+.chartTrack { flex: 1; min-height: 60px; width: 100%; display: flex; justify-content: center; align-items: flex-end; border-bottom: 1px solid #cbd5ba; }
+.chartTrack > span { width: min(100%, 24px); min-width: 3px; border-radius: 4px 4px 0 0; background: #849b62; }
+.chart button:hover .chartTrack > span { background: #da7851; }
+.chart small { font-size: 8px; padding-top: 6px; }
+.miniMetrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #e0e7d2; flex-shrink: 0; }
+.miniMetrics > div { padding: 10px 15px; }
+.miniMetrics span { display: block; color: #6c7b5e; font-size: 9px; margin-bottom: 5px; }
+.miniMetrics strong { font-weight: 600; font-size: 15px; letter-spacing: -.4px; }
+.occupancy { padding: 0 16px 13px; flex-shrink: 0; }
+.occupancy > div:first-child { display: flex; justify-content: space-between; font-size: 10px; color: #6a775e; margin-bottom: 8px; }
+.occupancyTrack { height: 5px; border-radius: 4px; background: #e0e7d2; overflow: hidden; }
+.occupancyTrack span { display: block; height: 100%; border-radius: inherit; background: #80985c; }
+.footer { display: flex; justify-content: space-between; gap: 14px; font-size: 9px; line-height: 1.5; color: #6a775e; flex-shrink: 0; }
+.footer p { margin: 0; }
+.empty { color: #6b795d; text-align: center; padding: 28px 16px; font-size: 12px; line-height: 1.8; }
+.split { display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px; flex: 1; min-height: 0; }
+.tableGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(205px, 1fr)); gap: 10px; padding: 0 14px 14px; align-content: start; }
+.tableCard { background: #fffef8; border: 1px solid #dce3ce; border-radius: 11px; padding: 13px; }
+.tableCard[data-occupied=true] { border-color: #a9bd8a; background: #edf2df; }
+.tableTop { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+.tableTop h3 { font-size: 13px; margin: 0 0 5px; }
+.tableTop small { font: 9px 'DM Mono', monospace; color: #6f7f5f; }
+.tableTop > span { background: #e3ebd5; padding: 4px 7px; font-size: 9px; border-radius: 5px; color: #536948; }
+.tableCard p { margin: 10px 0; color: #627354; font-size: 10px; line-height: 1.6; }
+.tableActions { display: flex; gap: 6px; margin-top: 11px; flex-wrap: wrap; }
+.tableActions button { background: #355134; color: #f6f8ec; border: 0; border-radius: 6px; padding: 7px 9px; font-size: 10px; }
+.tableActions button:last-child:not(:first-child) { background: #e1e8d3; color: #485d3a; }
+.ticketGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; padding: 0 14px 14px; align-content: start; }
+.ticketGrid > .empty { grid-column: 1 / -1; }
+.shell :global(.restaurant-order) { min-width: 0; padding: 13px; border-radius: 11px; border-color: #dce3ce; background: #fffef8; }
+.shell :global(.order-meta) { gap: 10px; }
+.shell :global(.order-meta) > span { font-size: 13px; }
+.shell :global(.order-meta) small { font-size: 9px; }
+.shell :global(.order-items) { margin: 10px 0; padding: 4px 0; max-height: 150px; overflow-y: auto; }
+.shell :global(.order-items) p { font-size: 11px; line-height: 1.6; margin: 5px 0; }
+.shell :global(.order-footer) { gap: 8px; }
+.shell :global(.order-footer) strong { font-size: 13px; }
+.shell :global(.ready-pill) { color: #37552d; background: #e2edcf; font-size: 10px; padding: 8px 10px; }
+.ticketTime { display: block; color: #728062; font-size: 9px; margin: 7px 0 0; }
+.kitchenTools { display: flex; justify-content: space-between; gap: 14px; align-items: center; flex-shrink: 0; }
+.kitchenTools .panelTools { padding: 0; width: 245px; }
+.kanban { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; flex: 1; min-height: 0; }
+.lane { background: #e0e7d2; }
+.lane[data-stage=READY] { background: #dbe8c9; }
+.lane .ticketGrid { grid-template-columns: 1fr; padding: 0 10px 10px; }
+.lane .panelHeader { padding: 13px; }
+.menuGrid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 12px; flex: 1; min-height: 0; }
+.menuList { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 9px; padding: 0 14px 14px; align-content: start; }
+.shell :global(.owner-dish) { padding: 12px; gap: 12px; border-color: #dce3ce; border-radius: 10px; background: #fffef8; }
+.shell :global(.owner-dish-icon) { font-size: 26px; }
+.shell :global(.owner-dish) > div:first-of-type { min-width: 0; flex: 1; }
+.shell :global(.owner-dish) h3 { font-size: 13px; margin-bottom: 5px; overflow-wrap: anywhere; }
+.shell :global(.owner-dish) p { font-size: 11px; line-height: 1.5; margin-bottom: 6px; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.shell :global(.owner-dish) strong { font-size: 12px; }
+.shell :global(.availability) { font-size: 9px; margin-top: 3px; }
+.shell :global(.owner-dish-actions) { gap: 6px; }
+.shell :global(.owner-dish-actions) button { font-size: 10px; padding: 7px 9px; }
+.shell .dishForm { background: #f8f9f0; padding: 16px; overflow-y: auto; display: block; scrollbar-width: thin; }
+.dishForm :global(.kicker) { font-size: 9px; margin-bottom: 6px; }
+.dishForm h2 { font-size: 19px; letter-spacing: -.7px; margin: 0 0 14px; }
+.dishForm label { font-size: 11px; }
+.dishForm :is(input:not([type=checkbox]), textarea) { font-size: 12px; padding: 8px 10px; margin: 5px 0 11px; }
+.dishForm textarea { resize: vertical; min-height: 52px; max-height: 110px; }
+.dishForm :global(.checkbox-label) { margin: 3px 0 13px; font-size: 11px; }
+.dishForm :global(.primary-button) { font-size: 12px; padding: 10px 14px; background: #42623b; }
+.dishForm :global(.text-button) { font-size: 11px; }
+.dishForm details { font-size: 10px; color: #69765e; margin-top: 13px; line-height: 1.7; }
+.dishForm summary { cursor: pointer; }
+.dishForm details p { margin: 6px 0 0; }
+.qrBackdrop { align-items: center; padding: 16px; }
+.qrBackdrop :global(.qr-sheet) { max-height: calc(100svh - 32px); overflow-y: auto; color: #263427; }
+
+@media (min-width: 1600px) { .shell { padding: 20px 30px; gap: 18px; } .board { padding: 20px; gap: 16px; } .metric { padding: 17px 20px; } .tableGrid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); } .menuGrid { grid-template-columns: minmax(0, 1fr) 370px; } }
+@media (max-width: 1150px) { .shell { padding: 14px 16px; gap: 12px; } .board { padding: 12px; gap: 10px; } .metric { padding: 11px; } .metric p { font-size: 9px; } .metricsSix { gap: 7px; } .analyticsGrid { grid-template-columns: 1.1fr 1fr 1fr; gap: 9px; } .nav > div a { padding: 8px 14px; } .panelHeader { padding: 13px; } .dataTable :is(th, td) { padding: 10px; font-size: 10px; } .miniMetrics > div { padding: 9px 12px; } .menuGrid { grid-template-columns: minmax(0, 1fr) 300px; } }
+@media (max-width: 900px), (max-height: 620px) { .shell { height: auto; min-height: 100svh; overflow: visible; } .board { flex: none; overflow: visible; } .analyticsGrid { grid-template-columns: 1fr 1fr; flex: none; } .analyticsGrid > .panel:first-child { grid-column: 1 / -1; min-height: 360px; } .analyticsGrid > .panel { min-height: 350px; max-height: 500px; } .metricsSix { grid-template-columns: repeat(3, minmax(0, 1fr)); } .scroll { max-height: 55svh; } .split { grid-template-columns: 1fr; } .split > .panel { min-height: 250px; } .menuGrid { grid-template-columns: minmax(0, 1fr) 300px; flex: none; align-items: start; } .menuGrid > .panel:first-child { max-height: 650px; } .kanban { min-height: 400px; } .lane { max-height: 70svh; } .heading h1 { font-size: 28px; } .heading > p { max-width: 270px; font-size: 10px; } }
+@media (max-width: 650px) { .shell { padding: 16px 12px; } .nav { flex-wrap: wrap; gap: 14px; } .nav :global(.brand) { font-size: 23px; } .nav > div { width: 100%; order: 3; justify-content: space-between; } .nav > div a { padding: 10px 12px; font-size: 11px; flex: 1; text-align: center; } .staffLink { font-size: 10px; margin-left: auto; } .heading { align-items: flex-start; flex-direction: column; gap: 12px; padding: 8px 3px; } .heading h1 { font-size: 27px; } .heading > p { max-width: none; } .filters { width: 100%; } .filters label { flex: 1; } .filters :is(input, select) { width: 100%; } .board { padding: 10px; border-radius: 17px; } .metrics, .metricsSix { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .metric { padding: 13px; } .metric strong { font-size: 23px; } .analyticsGrid { grid-template-columns: 1fr; } .analyticsGrid > .panel:first-child { min-height: 370px; } .analyticsGrid > .panel { max-height: 470px; } .panelHeader { flex-wrap: wrap; } .tableForm { width: 100%; } .tableGrid, .ticketGrid { grid-template-columns: 1fr; padding: 0 10px 10px; } .kanban { grid-template-columns: 1fr; } .lane { min-height: 180px; max-height: 65svh; } .kitchenTools { align-items: stretch; flex-direction: column; gap: 10px; } .kitchenTools .panelTools { width: 100%; } .menuGrid { grid-template-columns: 1fr; } .menuGrid > .panel:first-child { max-height: 520px; } .shell :global(.owner-dish) { flex-wrap: wrap; } .shell :global(.owner-dish-actions) { display: flex; width: 100%; margin-left: 0; } .shell :global(.owner-dish) > div:not(:global(.owner-dish-actions)) { flex: 1; min-width: 0; } .footer { flex-direction: column; gap: 4px; } .qrBackdrop :global(.qr-sheet) { padding: 24px; width: 100%; } }
