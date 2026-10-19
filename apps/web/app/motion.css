@@ -47,6 +47,26 @@ main > nav, main > header, [aria-label="System summary"] > article, #services, #
   to { opacity: 1; transform: none; }
 }
 
+.landing-intro { position: relative; isolation: isolate; }
+.landing-intro-backdrop { position: fixed; inset: 0; z-index: 0; background: var(--forest); pointer-events: none; animation: landing-intro-clear 1.04s step-end forwards; }
+.landing-unveil { position: relative; z-index: 1; min-height: 100svh; background: var(--paper); animation: landing-unveil .82s .22s cubic-bezier(.76, 0, .24, 1) backwards; }
+.landing-intro-star { position: fixed; left: 50%; top: 50svh; z-index: 2; display: grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; background: var(--paper); color: var(--coral); font-size: 60px; line-height: 1; pointer-events: none; animation: landing-intro-star .9s both; }
+
+/* CSS completes the reveal even before the animation features finish loading. */
+@keyframes landing-unveil {
+  from { clip-path: circle(48px at 50vw 50svh); }
+  to { clip-path: circle(75vmax at 50vw 50svh); }
+}
+
+@keyframes landing-intro-star {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.7) rotate(-22deg); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1.08) rotate(3deg); }
+  55% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(.75) rotate(10deg); visibility: hidden; }
+}
+
+@keyframes landing-intro-clear { to { visibility: hidden; } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation: none !important;
@@ -54,4 +74,6 @@ main > nav, main > header, [aria-label="System summary"] > article, #services, #
   }
 
   button, a { translate: none !important; scale: none !important; }
+  .landing-intro-backdrop, .landing-intro-star { display: none; }
+  .landing-unveil { clip-path: none; }
 }
