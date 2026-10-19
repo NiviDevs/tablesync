@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Fragment, useEffect, useState } from 'react';
 import { loadOverview, type MetricValue, type OpsOverview } from '@/lib/ops';
 import styles from './ops.module.css';
+import LiveCharts from './live-charts';
 
 function sampleState(sample: MetricValue, clock: number) {
   return sample.state === 'fresh' && sample.sampleAt && clock - Date.parse(sample.sampleAt) > 45000 ? 'stale' : sample.state;
@@ -67,6 +68,7 @@ export default function Ops() {
       <p className={styles.navLabel}>Workspace</p>
       <nav aria-label="Operations navigation">
         <a className={styles.activeNav} href="#overview" aria-current="page"><span aria-hidden="true">◈</span> Overview</a>
+        <a href="#live-metrics"><span aria-hidden="true">∿</span> Live metrics</a>
         <a href="#services"><span aria-hidden="true">≡</span> Services</a>
         <a href="#infrastructure"><span aria-hidden="true">▤</span> Infrastructure</a>
       </nav>
@@ -91,6 +93,7 @@ export default function Ops() {
             <article><p>Request throughput</p><strong>{rates.length ? decimal(totalRate) : '—'}<span> req/s</span></strong><small>{rates.length} of {services.length} service rates available · 1 min window</small></article>
             <article><p>Active seatings</p><Metric sample={overview.session.activeSeatingSessions} clock={clock} /><small>Current open table sessions</small></article>
           </section>
+          <LiveCharts overview={overview} />
           <section className={styles.panel} id="services" aria-labelledby="services-heading">
             <div className={styles.panelHeading}><div><p className={styles.eyebrow}>Application layer</p><h2 id="services-heading">Service monitor</h2></div><span className={styles.count}>{services.length} services</span></div>
             <div className={styles.filters}><div className={styles.filterButtons} aria-label="Service filters"><button type="button" aria-pressed={!attentionOnly} onClick={() => setAttentionOnly(false)}>All services <span>{services.length}</span></button><button type="button" aria-pressed={attentionOnly} onClick={() => setAttentionOnly(true)}>Needs attention <span>{attentionCount}</span></button></div><label className={styles.search}><span className={styles.srOnly}>Search services</span><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search services…" /></label></div>

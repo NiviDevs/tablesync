@@ -173,6 +173,9 @@ checkout; it does not claim independent real payments, refunds or payouts.
   traffic, errors, latency, CPU/memory, desired/ready replicas and queue data.
 - The Ops reader exposes fixed queries with deadlines and a short cache;
   arbitrary Prometheus queries are not accepted from the browser.
+- Ops graphs read 15 minutes of Prometheus history at 15-second intervals,
+  with 5/15-minute views and exact sample tables. Application throughput, p95
+  and 5xx graphs work in Compose; Session CPU/memory/replicas require Kubernetes.
 - Source samples older than 45 seconds are marked stale. Missing samples remain
   unavailable rather than appearing as zero or healthy.
 - Session keeps durable state outside the process, so additional replicas use
@@ -196,6 +199,8 @@ orchestration on one local machine, not multi-machine high availability.
 - `npm run demo`: generate private local credentials, build/start containers,
   apply migrations and start account-free demo role selection.
 - `npm run demo:stop` and `demo:logs`: preserve state and inspect service errors.
+- `npm run load:smoke` and `load`: pinned Docker k6 health/read checks for Compose,
+  with explicit failure thresholds and local evidence files.
 - `npm run cloud`, `cloud:open`, `cloud:stop`, `cloud:load` and `cloud:password`:
   simple controls for startup, access, load and Grafana login.
 - Short README/startup/walkthrough documents replacing obsolete plans, duplicate

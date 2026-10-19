@@ -11,6 +11,8 @@
     "cloud:stop": "bash scripts/cloud.sh stop",
     "cloud:password": "bash scripts/cloud.sh password",
     "cloud:load": "bash scripts/cloud.sh load",
+    "load": "bash infra/k6/run.sh compose",
+    "load:smoke": "bash infra/k6/run.sh compose smoke",
     "demo": "node scripts/demo.mjs",
     "demo:stop": "node scripts/demo.mjs stop",
     "demo:logs": "node scripts/demo.mjs logs",

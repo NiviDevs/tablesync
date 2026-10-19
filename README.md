@@ -37,6 +37,20 @@ keep database data. [History and persistence details](docs/DEMO_DATA.md).
 - [Current features and limits](docs/STATUS.md)
 - [Cloud setup](infra/k8s/README.md)
 
+## Watch live metrics under load
+
+With `npm run demo` running, open the DevOps workspace and use another terminal:
+
+```bash
+npm run load:smoke    # 10-second gateway health check
+npm run load          # Read-only gateway/Session load, 25 requests/s
+```
+
+Ops graphs show real throughput, p95 latency and 5xx errors over 5 or 15 minutes.
+Prometheus scrapes every 15 seconds; rates use a one-minute window. Kubernetes
+also supplies Session CPU, memory and replica graphs. Load commands use the
+pinned k6 Docker image. [Rates, results and scaling details](infra/k6/README.md).
+
 ## Run the cloud presentation
 
 On this Linux machine, run:

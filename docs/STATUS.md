@@ -14,6 +14,11 @@
 - Signed demo owner/operator access in the local educational environment.
 - Responsive Operations workspace with live metrics, service filters, source
   inspection, and manual or automatic refresh controls.
+- Prometheus history graphs for application traffic, p95 latency and 5xx errors;
+  Kubernetes adds Session CPU, memory and desired/Ready replicas. Graphs offer
+  5/15-minute windows and accessible sample tables, preserving gaps in source data.
+- Read-only Docker k6 commands for Compose and Kubernetes, with failure thresholds,
+  known-table response validation and ignored local evidence files.
 
 Cloud progress: [B](progress/B.md), covering Kubernetes, persistence, real
 application metrics, Prometheus/Grafana, protected Ops and load/HPA controls.

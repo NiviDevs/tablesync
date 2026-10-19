@@ -15,6 +15,11 @@ Start the chosen environment. Keep owner, operator and guest windows separate.
 6. **Cloud:** operator demo login. Show real traffic, latency, errors and ready
    replicas. Open Grafana. Run `npm run cloud:load` in another terminal and watch CPU/HPA.
 
+For Compose, run `npm run load:smoke`, then `npm run load` instead. Watch the
+DevOps **Live metrics** graphs; request rates use a one-minute window and update
+after Prometheus scrapes. The read load exercises gateway and Session only.
+Kubernetes also shows CPU, memory and desired/Ready replica history.
+
 Gateway routes requests; Session owns tables/guests; Order owns menu/cart/kitchen;
 Payment simulates checkout; RabbitMQ delivers events; PostgreSQL keeps orders;
 Prometheus/Grafana show infrastructure activity.

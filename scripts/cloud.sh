@@ -26,7 +26,7 @@ SH
 fi
 source infra/k8s/tools.sh
 if [[ "$TABLESYNC_CLOUD_ACTION" == load ]]; then
-  DURATION="${DURATION:-60s}" COOLDOWN="${COOLDOWN:-60s}" bash infra/k6/run.sh
+  DURATION="${DURATION:-60s}" COOLDOWN="${COOLDOWN:-60s}" bash infra/k6/run.sh kubernetes
   exit $?
 fi
 if [[ "$TABLESYNC_CLOUD_ACTION" == stop ]]; then

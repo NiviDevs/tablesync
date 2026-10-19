@@ -3,7 +3,7 @@ set -euo pipefail
 source "$(dirname "$0")/tools.sh"
 : "${EVIDENCE_DIR:?Set EVIDENCE_DIR}"
 mkdir -p "$EVIDENCE_DIR"
-python3 - "$EVIDENCE_DIR" "${CAPTURE_SECONDS:-900}" <<'PY'
+exec python3 - "$EVIDENCE_DIR" "${CAPTURE_SECONDS:-900}" <<'PY'
 import datetime,json,os,subprocess,sys,time,urllib.request,urllib.parse
 end=time.monotonic()+int(sys.argv[2])
 queries={'sessionRequests':'sum by(pod)(tablesync_http_requests_total{service="session"})','sessionCpu':'sum by(pod)(rate(container_cpu_usage_seconds_total{namespace="tablesync",container="session"}[1m]))','sessionMemory':'sum by(pod)(container_memory_working_set_bytes{namespace="tablesync",container="session"})'}

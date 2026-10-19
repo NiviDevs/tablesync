@@ -42,7 +42,15 @@ belong in the new path.
 | GET `/v1/restaurant/orders` | Staff bearer | `{orders:OrderView[]}`; most recent 100 for that restaurant |
 | PATCH `/v1/orders/:id/status` | `{status:OrderStatus}` | `OrderView`; staff only; repeated target succeeds; skip/reversal 409 |
 | POST `/v1/sessions/:id/close` | Staff bearer | `TableView`; reject unfinished orders/checkouts; repeated close succeeds |
-| GET `/v1/ops/overview` | Operator bearer | C4 response owned by B; no arbitrary query arguments |
+| GET `/v1/ops/overview` | Operator bearer | Current service/Session samples plus fixed Prometheus history; no query arguments |
+
+Ops `history` contains Unix-second `start`/`end`, `step:15`, per-service
+`requestsPerSecond`/`p95Seconds`/`errorFraction`, and Session
+`desiredReplicas`/`readyReplicas`/`cpuCores`/`memoryBytes`. Each history series is
+an array of `[Unix seconds, number|null]` pairs covering the last 15 minutes.
+A failed query is `null`; an absent series is `[]`; non-finite values become
+null points. Source samples older than 45 seconds are excluded. Current sample
+fields keep their existing value, source timestamp and freshness state.
 
 Replay of a joinKey with a different name/table is 409. A client-supplied
 participant ID or price never establishes ownership or overrides server prices.
