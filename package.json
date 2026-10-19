@@ -15,6 +15,7 @@
     "demo:stop": "node scripts/demo.mjs stop",
     "demo:logs": "node scripts/demo.mjs logs",
     "demo:setup": "node scripts/demo.mjs setup",
+    "demo:seed": "node scripts/demo.mjs seed",
     "dev": "npm run dev --workspace=@tablesync/web",
     "dev:api": "npm run dev --workspace=@tablesync/api-gateway",
     "build": "npm run build --workspace=@tablesync/web",

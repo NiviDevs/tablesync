@@ -26,6 +26,10 @@ npm run demo:stop     # Stop; preserve orders and database data
 npm run demo:logs     # Read service errors
 ```
 
+Run `npm run demo:seed` to add one year of repeatable simulated restaurant
+history for owner metrics. Existing records are preserved. Container restarts
+keep database data. [History and persistence details](docs/DEMO_DATA.md).
+
 - [Completed work, technology and enforced product rules](docs/FEATURES.md)
 - [Five-minute walkthrough](docs/DEMO.md)
 - [Startup help](docs/DEPLOYMENT.md)

@@ -7,7 +7,12 @@ import { join } from 'node:path';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const command = process.argv[2] ?? 'start';
-if (!['start', 'stop', 'logs', 'setup'].includes(command)) throw new Error('Use npm run demo, demo:stop, demo:logs or demo:setup');
+if (!['start', 'stop', 'logs', 'setup', 'seed'].includes(command)) throw new Error('Use npm run demo, demo:stop, demo:logs, demo:setup or demo:seed');
+const today = new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10);
+const historyEnd = process.argv[3] ?? today;
+if (command === 'seed' && (process.argv.length > 4 || !/^\d{4}-\d{2}-\d{2}$/.test(historyEnd) ||
+  !Number.isFinite(Date.parse(historyEnd)) || new Date(historyEnd).toISOString().slice(0, 10) !== historyEnd ||
+  historyEnd < '2001-01-01' || historyEnd > today)) throw new Error('Use npm run demo:seed -- [YYYY-MM-DD], with a valid end date no later than today');
 const local = join(root, '.local');
 mkdirSync(local, { recursive: true, mode: 0o700 });
 const envPath = join(root, '.env');
@@ -25,9 +30,9 @@ ensureSetting('DEMO_JWT_PRIVATE_JWK', () => JSON.stringify(generateKeyPairSync('
 writeFileSync(envPath, settings, { mode: 0o600 });
 if (command === 'setup') { console.log('Local demo credentials are ready in the ignored .env file.'); process.exit(0); }
 
-function run(args, { capture = false, output } = {}) {
+function run(args, { capture = false, output, input } = {}) {
   const result = spawnSync('docker', args, { cwd: root, encoding: 'utf8',
-    stdio: output !== undefined ? ['ignore', output, 'inherit'] : capture ? ['ignore', 'pipe', 'pipe'] : 'inherit' });
+    input, stdio: output !== undefined ? ['ignore', output, 'inherit'] : capture ? ['ignore', 'pipe', 'pipe'] : [input === undefined ? 'inherit' : 'pipe', 'inherit', 'inherit'] });
   if (result.status !== 0) throw new Error(capture ? result.stderr?.trim() || result.error?.message || 'Docker command failed' : `Docker ${args[0]} failed. Run npm run demo:logs for details.`);
   return result.stdout?.trim() ?? '';
 }
@@ -35,7 +40,7 @@ const access = spawnSync('docker', ['info', '--format', '{{.ServerVersion}}'], {
 if (access.status !== 0) {
   if (process.platform === 'linux' && access.stderr?.includes('permission denied') && !process.env.TABLESYNC_DOCKER_GROUP_READY) {
     const quote = value => `'${value.replaceAll("'", "'\\''")}'`;
-    const refreshed = spawnSync('newgrp', ['docker'], { input: `exec env TABLESYNC_DOCKER_GROUP_READY=1 ${quote(process.execPath)} ${quote(fileURLToPath(import.meta.url))} ${quote(command)}\n`, stdio: ['pipe', 'inherit', 'inherit'] });
+    const refreshed = spawnSync('newgrp', ['docker'], { input: `exec env TABLESYNC_DOCKER_GROUP_READY=1 ${quote(process.execPath)} ${quote(fileURLToPath(import.meta.url))} ${quote(command)}${command === 'seed' ? ` ${quote(historyEnd)}` : ''}\n`, stdio: ['pipe', 'inherit', 'inherit'] });
     process.exit(refreshed.status ?? 1);
   }
   console.error('Start Docker Desktop or Docker Engine, then run this command again.');
@@ -54,6 +59,13 @@ try {
   console.log(`TableSync local demo (${project})`);
   if (command === 'stop') { run([...compose, 'stop']); console.log('Stopped. Orders and database volumes are preserved.'); process.exit(0); }
   if (command === 'logs') { run([...compose, 'logs', '--tail=80', '-f']); process.exit(0); }
+  if (command === 'seed') {
+    console.log(`Adding 365 days of simulated history ending ${historyEnd}. Existing records are preserved.`);
+    run([...compose, 'exec', '-T', 'postgres', 'psql', '-X', '-U', 'tablesync', '-d', 'tablesync',
+      '-v', 'ON_ERROR_STOP=1', '-v', `history_end=${historyEnd}`], { input: readFileSync(join(root, 'infra/postgres/demo-history.sql'), 'utf8') });
+    console.log('Simulated history is ready. Refresh the owner dashboard. Repeating this command does not duplicate records.');
+    process.exit(0);
+  }
   console.log('Building the application. The first start downloads Docker images and may take several minutes.');
   run([...compose, 'build']);
   run([...compose, 'up', '-d', '--wait', '--wait-timeout', '180', 'postgres', 'redis', 'rabbitmq']);
