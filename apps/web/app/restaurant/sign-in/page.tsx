@@ -31,12 +31,12 @@ export default function RestaurantSignIn() {
     setMessage(error ? error.message : 'Check your email for a restaurant sign-in link.');
   }
   return <main className="arrival-page"><Link className="brand" href="/">table<i>sync</i></Link><section className="arrival-card">
-    <p className="kicker">{demo ? 'Local educational demo' : 'Restaurant access'}</p><h1>{demo ? 'Choose your view.' : 'Welcome back.'}</h1>
+    <p className="kicker">Restaurant access</p><h1>{demo ? 'Choose your workspace.' : 'Welcome back.'}</h1>
     <p className="arrival-table">Juniper House</p>
-    {demo ? <><p>No account needed for this local demo. Guest ordering works separately in another browser.</p>
+    {demo ? <><p>Manage your restaurant or monitor service operations. Open guest ordering in a separate browser window.</p>
       <button className="primary-button full" disabled={busy} onClick={() => demoSignIn('owner')}>Open owner and kitchen</button>
       <button className="primary-button full demo-role-button" disabled={busy} onClick={() => demoSignIn('operator')}>Open DevOps view</button>
-      <p className="quiet-note">Demo access is enabled on this instance. Payments are simulated.</p>
+      <p className="quiet-note">Payments are simulated. No money is charged.</p>
     </> : <><label htmlFor="email">Work email</label><input id="email" type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="you@restaurant.com" />
       <button className="primary-button full" disabled={!email} onClick={send}>Email me a sign-in link</button></>}
     {message && <p role="alert" className="quiet-note">{message}</p>}

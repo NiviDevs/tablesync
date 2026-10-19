@@ -8,6 +8,8 @@
 - Table creation, QR and removal of unused tables.
 - Daily simulated sales, order quantities, dish performance and table metrics.
 - Signed demo owner/operator access in the local educational environment.
+- Responsive Operations workspace with live metrics, service filters, source
+  inspection, and manual or automatic refresh controls.
 
 Cloud progress: [B](progress/B.md), covering Kubernetes, persistence, real
 application metrics, Prometheus/Grafana, protected Ops and load/HPA controls.
