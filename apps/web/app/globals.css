@@ -23,6 +23,10 @@
 
 /* Service-backed shared cart controls. */
 .cart-line { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #ddd5c8; }
+.cart-line .table-actions { align-items: center; flex-wrap: wrap; }
+.cart-line button { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 10px 13px; border: 1px solid var(--forest); border-radius: 10px; background: var(--forest); color: #fffdf8; font-size: 17px; font-weight: 700; line-height: 1; }
+.cart-line button:last-child { border-color: #e9d2c6; background: #f3e7e0; color: #914731; font-size: 12px; }
+@media (hover: hover) { .cart-line button:not(:disabled):hover { background: #304b39; } .cart-line button:last-child:not(:disabled):hover { background: #eed8cc; } }
 button:disabled { cursor: not-allowed; opacity: .55; }
 .restaurant-nav a:not(.brand) { color: inherit; }
 .restaurant-nav { gap: 20px; flex-wrap: wrap; }
