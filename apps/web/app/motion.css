@@ -1,0 +1,57 @@
+:root {
+  --motion-spring: cubic-bezier(.22, 1.3, .36, 1);
+}
+
+/* Individual transform properties leave Motion's layout transforms intact. */
+button, a, summary {
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease,
+    box-shadow .18s ease, opacity .18s ease, translate .3s var(--motion-spring), scale .3s var(--motion-spring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled):hover, a:is(.primary-button, .secondary-button):hover {
+    translate: 0 -1px;
+  }
+
+  .primary-button:not(:disabled):hover, .secondary-button:hover, .round-add:not(:disabled):hover {
+    scale: 1.025;
+  }
+}
+
+button:not(:disabled):active, a:is(.primary-button, .secondary-button):active {
+  translate: 0 0;
+  scale: .96;
+  transition-duration: .1s;
+}
+
+input, select, textarea {
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+:is(button, a, summary, input, select, textarea):focus-visible {
+  outline: 3px solid #ce6b43;
+  outline-offset: 3px;
+}
+
+/* Shared entrances also cover the independently maintained Operations route. */
+main > nav, main > header, [aria-label="System summary"] > article, #services, #infrastructure {
+  animation: workspace-arrive .45s var(--motion-spring) both;
+}
+
+[aria-label="System summary"] > article:nth-child(2), #services { animation-delay: .04s; }
+[aria-label="System summary"] > article:nth-child(3), #infrastructure { animation-delay: .08s; }
+
+@keyframes workspace-arrive {
+  from { opacity: .7; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  button, a { translate: none !important; scale: none !important; }
+}

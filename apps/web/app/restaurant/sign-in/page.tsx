@@ -1,4 +1,5 @@
 "use client";
+import * as m from 'motion/react-m';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
@@ -30,7 +31,7 @@ export default function RestaurantSignIn() {
     const { error } = await createClient().auth.signInWithOtp({ email, options: { emailRedirectTo: `${siteUrl}/auth/callback?next=/restaurant/dashboard` } });
     setMessage(error ? error.message : 'Check your email for a restaurant sign-in link.');
   }
-  return <main className="arrival-page"><Link className="brand" href="/">table<i>sync</i></Link><section className="arrival-card">
+  return <main className="arrival-page"><Link className="brand" href="/">table<i>sync</i></Link><m.section className="arrival-card" initial={{ opacity: .75, y: 14, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }}>
     <p className="kicker">Restaurant access</p><h1>{demo ? 'Choose your workspace.' : 'Welcome back.'}</h1>
     <p className="arrival-table">Juniper House</p>
     {demo ? <><p>Manage your restaurant or monitor service operations. Open guest ordering in a separate browser window.</p>
@@ -39,6 +40,6 @@ export default function RestaurantSignIn() {
       <p className="quiet-note">Payments are simulated. No money is charged.</p>
     </> : <><label htmlFor="email">Work email</label><input id="email" type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="you@restaurant.com" />
       <button className="primary-button full" disabled={!email} onClick={send}>Email me a sign-in link</button></>}
-    {message && <p role="alert" className="quiet-note">{message}</p>}
-  </section></main>;
+    {message && <m.p initial={{ opacity: .5, y: 4 }} animate={{ opacity: 1, y: 0 }} role="alert" className="quiet-note">{message}</m.p>}
+  </m.section></main>;
 }

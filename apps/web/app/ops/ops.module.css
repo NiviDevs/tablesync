@@ -55,6 +55,10 @@
 .filterButtons button:hover { background: #f1f2ea; }
 .filterButtons button[aria-pressed=true] { background: #e9ede2; border-color: #dce2d2; color: #314731; font-weight: 700; }
 .filterButtons button > span { font: 9px 'DM Mono', monospace; margin-left: 5px; opacity: .75; }
+.windowControls button { position: relative; isolation: isolate; }
+.windowControls button[aria-pressed=true] { background: transparent; border-color: transparent; }
+.windowControls button > .windowIndicator { position: absolute; inset: -1px; margin: 0; opacity: 1; background: #e9ede2; border: 1px solid #dce2d2; border-radius: inherit; z-index: -1; }
+.windowControls button > .windowLabel { margin: 0; opacity: 1; font: inherit; }
 .search input { width: 190px; max-width: 100%; padding: 9px 12px; color: var(--ink); background: #f9faf4; border: 1px solid var(--line); border-radius: 7px; font-size: 11px; }
 .search input::placeholder { color: #72796b; }
 .tableScroll { overflow-x: auto; }

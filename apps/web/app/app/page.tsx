@@ -1,4 +1,5 @@
 "use client";
+import * as m from 'motion/react-m';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { api, ApiFailure, money, type CartView, type CheckoutView, type Menu, type TableView } from '@/lib/api';
@@ -110,25 +111,25 @@ export default function Customer() {
     sessionStorage.removeItem(`tablesync-join-${code}`);
     setGuest(null); setCart(null); setCheckout(null); setClosed(false); setExpired(false); setError('');
   }
-  const notice = <>{(error || poll.error) && <p role="alert" className="inline-error">{error || poll.error} <button onClick={poll.refresh}>Retry refresh</button></p>}{poll.stale && <p role="status">Updates are stale. Showing the last received data.</p>}</>;
-  if (!guest) return <main className="arrival-page"><Link className="brand" href="/">table<i>sync</i></Link><section className="arrival-card">
+  const notice = <>{(error || poll.error) && <m.p initial={{ opacity: .5, y: 4 }} animate={{ opacity: 1, y: 0 }} role="alert" className="inline-error">{error || poll.error} <button onClick={poll.refresh}>Retry refresh</button></m.p>}{poll.stale && <p role="status">Updates are stale. Showing the last received data.</p>}</>;
+  if (!guest) return <main className="arrival-page"><Link className="brand" href="/">table<i>sync</i></Link><m.section className="arrival-card" initial={{ opacity: .75, y: 14, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }}>
     <p className="kicker">Juniper House</p><h1>{table?.name ?? 'Your table'}</h1><p>{code} · Shared order</p>
     {notice}<label htmlFor="guest-name">What should we call you?</label><input id="guest-name" maxLength={80} value={name} onChange={e => setName(e.target.value)} placeholder="Your first name" />
     <button className="primary-button full" disabled={busy || !table || !name.trim()} onClick={join}>Join the table</button>
     {error && <button onClick={() => { sessionStorage.removeItem(`tablesync-join-${code}`); setError(''); }}>Start a new join</button>}
-  </section></main>;
-  if (closed || expired) return <main className="arrival-page"><section className="arrival-card"><h1>{closed ? 'This seating is closed.' : 'Your guest access expired.'}</h1><p>{closed ? 'Your previous order stays with the restaurant.' : 'Rejoin to continue at this table.'}</p><button className="primary-button" onClick={rejoin}>Rejoin table</button></section></main>;
+  </m.section></main>;
+  if (closed || expired) return <main className="arrival-page"><m.section className="arrival-card" initial={{ opacity: .75, y: 14, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }}><h1>{closed ? 'This seating is closed.' : 'Your guest access expired.'}</h1><p>{closed ? 'Your previous order stays with the restaurant.' : 'Rejoin to continue at this table.'}</p><button className="primary-button" onClick={rejoin}>Rejoin table</button></m.section></main>;
   const editable = !busy && !poll.stale && table?.session?.status === 'OPEN' && cart?.state === 'EDITING' && !sessionStorage.getItem(operationKey);
   const paymentLabel = checkout?.orderId ? 'Order received by kitchen' : checkout?.status === 'COMMITTED'
     ? 'Payment committed — order delivery pending' : checkout?.status === 'PENDING' ? 'Payment pending — checking outcome'
     : checkout?.status === 'FAILED' ? 'Payment failed — retry available' : cart?.state === 'COMMITTED' ? 'Table payment committed' : cart?.state === 'PENDING' ? 'Table payment pending' : 'Ready when your table is ready';
   return <main className="diner-page"><header className="diner-header"><Link className="brand" href="/">table<i>sync</i></Link><span>{table?.name} · {table?.session?.status}</span></header>
-    {notice}<section className="diner-hero"><div><p className="kicker light">Juniper House · {code}</p><h1>Hello, {guest.name}.</h1><p>{table?.session?.participants.length ?? 0} guests at this table. Everyone can add their own dishes.</p></div></section>
+    {notice}<m.section className="diner-hero" initial={{ opacity: .75, y: 10 }} animate={{ opacity: 1, y: 0 }}><div><p className="kicker light">Juniper House · {code}</p><h1>Hello, {guest.name}.</h1><p>{table?.session?.participants.length ?? 0} guests at this table. Everyone can add their own dishes.</p></div></m.section>
     {table?.session?.status === 'CLOSING' && <p role="status">Staff are closing this seating. Ordering is paused.</p>}
-    <section className="menu-section"><div className="section-heading"><h2>Today&apos;s menu</h2></div><div className="menu-grid">{menu.map(item => <article className="dish-card" key={item.id}><div className="dish-art">{item.emoji}</div><div className="dish-copy"><h3>{item.name}</h3><p>{item.description}{!item.available && ' · Currently unavailable'}</p></div><strong>{money(item.unitPriceMinor)}</strong><button className="round-add" disabled={!editable || !item.available || (cart?.items.find(line => line.menuItemId === item.id && line.ownerId === guest.id)?.quantity ?? 0) >= 20} aria-label={`Add ${item.name}`} onClick={() => change(item.id, (cart?.items.find(line => line.menuItemId === item.id && line.ownerId === guest.id)?.quantity ?? 0) + 1)}>+</button></article>)}</div></section>
+    <section className="menu-section"><div className="section-heading"><h2>Today&apos;s menu</h2></div><div className="menu-grid">{menu.map((item, index) => <m.article layout="position" initial={{ opacity: .7, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .1 }} transition={{ delay: Math.min(index, 5) * .025 }} className="dish-card" key={item.id}><div className="dish-art">{item.emoji}</div><div className="dish-copy"><h3>{item.name}</h3><p>{item.description}{!item.available && ' · Currently unavailable'}</p></div><strong>{money(item.unitPriceMinor)}</strong><button className="round-add" disabled={!editable || !item.available || (cart?.items.find(line => line.menuItemId === item.id && line.ownerId === guest.id)?.quantity ?? 0) >= 20} aria-label={`Add ${item.name}`} onClick={() => change(item.id, (cart?.items.find(line => line.menuItemId === item.id && line.ownerId === guest.id)?.quantity ?? 0) + 1)}>+</button></m.article>)}</div></section>
     {cart && table ? <GuestCart cart={cart} table={table} ownerId={guest.id} disabled={!editable} change={change} /> : <p>Loading shared cart…</p>}
-    <section className="payment-status"><h2 role="status">{paymentLabel}</h2><p>Simulate table payment — no money is collected.</p><p>This pays for all dishes at the table in one simulated transaction.</p>
+    <m.section layout="position" className="payment-status"><h2 role="status">{paymentLabel}</h2><p>Simulate table payment — no money is collected.</p><p>This pays for all dishes at the table in one simulated transaction.</p>
       <button className="primary-button" disabled={busy || poll.stale || !cart?.items.length || table?.session?.status !== 'OPEN' || !!checkout?.orderId || checkout?.status === 'COMMITTED'} onClick={pay}>{busy ? 'Checking payment…' : checkout?.status === 'FAILED' ? 'Retry simulated payment' : checkout?.status === 'PENDING' ? 'Check payment outcome' : `Simulate table payment · ${money(cart?.total.amountMinor ?? 0)}`}</button>
-    </section>
+    </m.section>
   </main>;
 }

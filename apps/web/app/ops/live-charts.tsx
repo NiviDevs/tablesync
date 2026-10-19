@@ -1,9 +1,11 @@
 'use client';
 import { useState } from 'react';
+import * as m from 'motion/react-m';
 import type { MetricHistory, OpsOverview } from '@/lib/ops';
 import styles from './ops.module.css';
 
 const colors = ['#3c7250', '#c75b37', '#6476b8', '#a27b26'];
+const reveal = { hidden: { opacity: .75, y: 10 }, visible: { opacity: 1, y: 0 } };
 const time = (seconds: number) => new Date(seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 type Series = { name: string; points: MetricHistory; color: string };
 
@@ -26,7 +28,7 @@ function Chart({ title, unit, series, start, end, step, format, stepped = false 
       return stepped ? `H${x(at)}V${y(value)}` : `L${x(at)},${y(value)}`;
     }).join(' ');
   };
-  return <figure className={styles.chart}>
+  return <m.figure className={styles.chart} variants={reveal}>
     <figcaption><h3>{title}</h3><span>{unit}</span></figcaption>
     {values.length ? <svg viewBox="0 0 600 184" role="img" aria-label={`${title}, ${time(start)} to ${time(end)}. Peak ${format(maximum)} ${unit}.`}>
       {[0, .5, 1].map(fraction => <g key={fraction}><line x1="56" x2="582" y1={y(maximum * fraction)} y2={y(maximum * fraction)} stroke="#e3e7dc" /><text x="48" y={y(maximum * fraction) + 4} textAnchor="end">{format(maximum * fraction)}</text></g>)}
@@ -44,7 +46,7 @@ function Chart({ title, unit, series, start, end, step, format, stepped = false 
     <details className={styles.chartSamples}><summary>View samples</summary><div tabIndex={0} role="region" aria-label={`${title} samples`}><table><thead><tr><th>Time</th>{visible.map(item => <th key={item.name}>{item.name} ({unit})</th>)}</tr></thead><tbody>
       {Array.from(new Set(visible.flatMap(item => item.points.map(([at]) => at)))).sort((a, b) => b - a).map(at => <tr key={at}><th scope="row">{time(at)}</th>{visible.map(item => { const value = item.points.find(point => point[0] === at)?.[1]; return <td key={item.name}>{value == null ? '—' : format(value)}</td>; })}</tr>)}
     </tbody></table></div></details>
-  </figure>;
+  </m.figure>;
 }
 
 export default function LiveCharts({ overview }: { overview: OpsOverview }) {
@@ -56,9 +58,9 @@ export default function LiveCharts({ overview }: { overview: OpsOverview }) {
   const session = (key: keyof typeof history.session, name: string, color = colors[0]): Series => ({ name, points: history.session[key], color });
   const shared = { start, end: history.end, step: history.step };
   return <section id="live-metrics" aria-labelledby="live-heading" className={styles.liveSection}>
-    <div className={styles.liveHeading}><div><p className={styles.eyebrow}>Load & performance</p><h2 id="live-heading">Live metrics</h2></div><div className={styles.filterButtons} aria-label="Graph time window">{[5, 15].map(value => <button type="button" key={value} aria-pressed={minutes === value} onClick={() => setMinutes(value)}>{value} min</button>)}</div></div>
+    <div className={styles.liveHeading}><div><p className={styles.eyebrow}>Load & performance</p><h2 id="live-heading">Live metrics</h2></div><div className={`${styles.filterButtons} ${styles.windowControls}`} aria-label="Graph time window">{[5, 15].map(value => <button type="button" key={value} aria-pressed={minutes === value} onClick={() => setMinutes(value)}>{minutes === value && <m.span className={styles.windowIndicator} layoutId="ops-history-window" aria-hidden="true" />}<span className={styles.windowLabel}>{value} min</span></button>)}</div></div>
     <p className={styles.historyNote}>Prometheus samples every 15 seconds · Rates use a 1-minute window · Gaps indicate missing data · Window ends {time(history.end)}</p>
-    <div className={styles.charts}>
+    <m.div className={styles.charts} initial="hidden" whileInView="visible" viewport={{ once: true, amount: .05 }} variants={{ hidden: {}, visible: { transition: { staggerChildren: .05 } } }}>
       <Chart {...shared} title="Request throughput" unit="req/s" series={application('requestsPerSecond')} format={value => value.toFixed(1)} />
       <Chart {...shared} title="p95 response time" unit="ms" series={application('p95Seconds')} format={value => (value * 1000).toFixed(1)} />
       <Chart {...shared} title="Server errors" unit="%" series={application('errorFraction')} format={value => (value * 100).toFixed(2)} />
@@ -67,6 +69,6 @@ export default function LiveCharts({ overview }: { overview: OpsOverview }) {
         <Chart {...shared} title="Session memory" unit="MiB" series={[session('memoryBytes', 'Session')]} format={value => (value / 1048576).toFixed(1)} />
         <Chart {...shared} title="Session replicas" unit="replicas" stepped series={[session('desiredReplicas', 'Desired'), session('readyReplicas', 'Ready', colors[1])]} format={value => value.toFixed(0)} />
       </>}
-    </div>
+    </m.div>
   </section>;
 }

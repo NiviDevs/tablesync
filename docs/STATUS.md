@@ -17,6 +17,8 @@
 - Prometheus history graphs for application traffic, p95 latency and 5xx errors;
   Kubernetes adds Session CPU, memory and desired/Ready replicas. Graphs offer
   5/15-minute windows and accessible sample tables, preserving gaps in source data.
+- Shared spring motion for page entrances, controls, lists and chart reveals, with
+  reduced-motion preferences respected.
 - Read-only Docker k6 commands for Compose and Kubernetes, with failure thresholds,
   known-table response validation and ignored local evidence files.
 
