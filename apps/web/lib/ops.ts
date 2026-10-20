@@ -2,7 +2,7 @@ import { api } from './api';
 export type MetricValue = { value: number | null; sampleAt: string | null; state: 'fresh' | 'stale' | 'unavailable' };
 export type MetricHistory = [number, number | null][] | null;
 export type OpsOverview = {
-  environment: 'local-minikube' | 'local-compose'; fetchedAt: string;
+  environment: 'local-minikube' | 'local-compose' | 'simulation'; fetchedAt: string;
   services: { name: string; health: MetricValue; requestsPerSecond: MetricValue; p95Seconds: MetricValue; errorFraction: MetricValue }[];
   session: { desiredReplicas: MetricValue; readyReplicas: MetricValue; cpuCores: MetricValue; memoryBytes: MetricValue; activeSeatingSessions: MetricValue };
   grafanaUrl: string;

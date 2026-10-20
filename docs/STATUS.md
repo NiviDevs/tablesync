@@ -21,6 +21,10 @@
   reduced-motion preferences respected.
 - Read-only Docker k6 commands for Compose and Kubernetes, with failure thresholds,
   known-table response validation and ignored local evidence files.
+- Ops control deck with an explicitly labelled browser simulation: adjustable
+  workload presets, duration/stop/reset controls, complete deployment samples,
+  delayed pod readiness and scale-down, and a filtered generated event stream.
+  Measured mode continues to show only real Prometheus samples.
 
 Cloud progress: [B](progress/B.md), covering Kubernetes, persistence, real
 application metrics, Prometheus/Grafana, protected Ops and load/HPA controls.

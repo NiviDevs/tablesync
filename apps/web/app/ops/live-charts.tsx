@@ -59,7 +59,7 @@ export default function LiveCharts({ overview }: { overview: OpsOverview }) {
   const shared = { start, end: history.end, step: history.step };
   return <section id="live-metrics" aria-labelledby="live-heading" className={styles.liveSection}>
     <div className={styles.liveHeading}><div><p className={styles.eyebrow}>Load & performance</p><h2 id="live-heading">Live metrics</h2></div><div className={`${styles.filterButtons} ${styles.windowControls}`} aria-label="Graph time window">{[5, 15].map(value => <button type="button" key={value} aria-pressed={minutes === value} onClick={() => setMinutes(value)}>{minutes === value && <m.span className={styles.windowIndicator} layoutId="ops-history-window" aria-hidden="true" />}<span className={styles.windowLabel}>{value} min</span></button>)}</div></div>
-    <p className={styles.historyNote}>Prometheus samples every 15 seconds · Rates use a 1-minute window · Gaps indicate missing data · Window ends {time(history.end)}</p>
+    <p className={styles.historyNote}>{overview.environment === 'simulation' ? 'Simulation · Generated history at 5-second intervals' : 'Prometheus samples every 15 seconds · Rates use a 1-minute window · Gaps indicate missing data'} · Window ends {time(history.end)}</p>
     <m.div className={styles.charts} initial="hidden" whileInView="visible" viewport={{ once: true, amount: .05 }} variants={{ hidden: {}, visible: { transition: { staggerChildren: .05 } } }}>
       <Chart {...shared} title="Request throughput" unit="req/s" series={application('requestsPerSecond')} format={value => value.toFixed(1)} />
       <Chart {...shared} title="p95 response time" unit="ms" series={application('p95Seconds')} format={value => (value * 1000).toFixed(1)} />

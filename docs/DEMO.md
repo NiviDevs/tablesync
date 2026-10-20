@@ -20,6 +20,18 @@ DevOps **Live metrics** graphs; request rates use a one-minute window and update
 after Prometheus scrapes. The read load exercises gateway and Session only.
 Kubernetes also shows CPU, memory and desired/Ready replica history.
 
+The DevOps **Control deck** also offers **Simulation** for a repeatable workload
+walkthrough. Select a preset and duration, then **Apply load**. Generated traffic
+raises latency and resource usage, Session pods become Pending then Running,
+and latency settles as capacity grows. **Stop load** drains traffic and shows
+cooldown before replicas shrink. Inspect the generated event stream, filter by
+service, or pause updates. **Reset** clears the scenario. **Measured** returns
+to real telemetry. The simulation does not send server requests, create orders,
+run payments, or change Kubernetes resources.
+
+Run the model check with Node.js 22.23.3:
+`node --experimental-strip-types --test apps/web/lib/ops-simulation.test.mjs`.
+
 Gateway routes requests; Session owns tables/guests; Order owns menu/cart/kitchen;
 Payment simulates checkout; RabbitMQ delivers events; PostgreSQL keeps orders;
 Prometheus/Grafana show infrastructure activity.
